@@ -21,8 +21,14 @@ export class UserEntity {
   @Column({ default: '' })
   image: string;
 
+  @Column({ default: '' })
+  phone: string;
+
   @Column({ select: false })
   password: string;
+
+  @Column({ default: 0 })
+  tokenVersion: number;
 
   @BeforeInsert()
   async hashPassword() {

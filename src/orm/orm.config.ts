@@ -9,7 +9,7 @@ const config: PostgresConnectionOptions = {
   password: '12345678',
   database: 'hotbox_pizza',
   entities: [join(__dirname, '..', '**', '*.entity.{ts,js}')],
-  migrations: [join(__dirname, '..', 'migrations', '**/*{.ts,.js}')],
+  migrations: [join(__dirname, 'migrations', '**/*{.ts,.js}')],
   synchronize: false,
 };
 
