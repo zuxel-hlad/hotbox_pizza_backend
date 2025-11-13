@@ -1,7 +1,27 @@
-import { ChangePasswordDto } from './change.password.dto';
-import { LoginDto } from './login.dto';
-import { RegisterDto } from './register.dto';
-import { ResetPasswordDto } from './reset.password.dto';
-import { VerifyResetPasswordDto } from './verify.reset.password.dto';
+import { ChangePasswordDto, ChangePasswordRequestDto, ChangePasswordResponseDto } from './change.password.dto';
+import { LoginDto, LoginRequestDto, LoginResponseDto } from './login.dto';
+import { RegisterDto, RegisterRequestDto, RegisterResponseDto } from './register.dto';
+import { ResetPasswordDto, ResetPasswordRequestDto, ResetPasswordResponseDto } from './reset.password.dto';
+import {
+  VerifyResetPasswordDto,
+  VerifyResetPasswordRequestDto,
+  VerifyResetPasswordResponseDto,
+} from './verify.reset.password.dto';
 
-export { ChangePasswordDto, LoginDto, RegisterDto, ResetPasswordDto, VerifyResetPasswordDto };
+export {
+  ChangePasswordDto,
+  ChangePasswordRequestDto,
+  ChangePasswordResponseDto,
+  LoginDto,
+  LoginRequestDto,
+  LoginResponseDto,
+  RegisterDto,
+  RegisterRequestDto,
+  RegisterResponseDto,
+  ResetPasswordDto,
+  ResetPasswordRequestDto,
+  ResetPasswordResponseDto,
+  VerifyResetPasswordDto,
+  VerifyResetPasswordRequestDto,
+  VerifyResetPasswordResponseDto,
+};
