@@ -1,7 +1,9 @@
 import { AppController } from '@app/app/app.controller';
 import { AppService } from '@app/app/app.service';
 import { AuthModule } from '@app/auth/auth.module';
+import { ExtraIngredientModule } from '@app/extra-ingredient/extra.ingredient.module';
 import ormConfig from '@app/orm/orm.config';
+import { PizzaModule } from '@app/pizza/pizza.module';
 import { TokenModule } from '@app/token/token.module';
 import { AuthMiddleware } from '@app/user/middleware/auth.middleware';
 import { UserModule } from '@app/user/user.module';
@@ -16,6 +18,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     TokenModule,
     AuthModule,
     UserModule,
+    PizzaModule,
+    ExtraIngredientModule,
   ],
   controllers: [AppController],
   providers: [AppService],

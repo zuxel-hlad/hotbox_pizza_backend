@@ -32,7 +32,7 @@ export class AuthController {
   @UsePipes(new ValidationPipe())
   @ApiBody({ type: RegisterRequestDto })
   @ApiOperation({ summary: 'Register new user' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'OK', type: RegisterResponseDto })
+  @ApiResponse({ status: HttpStatus.OK, type: RegisterResponseDto })
   @ApiResponse({
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     description: 'Validation errors',
@@ -53,7 +53,7 @@ export class AuthController {
   @Post('login')
   @UsePipes(new ValidationPipe())
   @ApiBody({ type: LoginRequestDto })
-  @ApiResponse({ status: HttpStatus.OK, description: 'OK', type: LoginResponseDto })
+  @ApiResponse({ status: HttpStatus.OK, type: LoginResponseDto })
   @ApiResponse({ status: HttpStatus.UNPROCESSABLE_ENTITY, description: 'Invalid credentials' })
   @ApiOperation({ summary: 'Login user' })
   async login(@Body('user') LoginDto: LoginDto): Promise<AuthResponseInterface> {
@@ -67,7 +67,7 @@ export class AuthController {
   @UsePipes(new ValidationPipe())
   @ApiSecurity('Token')
   @ApiBody({ type: ChangePasswordRequestDto })
-  @ApiResponse({ status: HttpStatus.OK, description: 'OK', type: ChangePasswordResponseDto })
+  @ApiResponse({ status: HttpStatus.OK, type: ChangePasswordResponseDto })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'User not found' })
   @ApiResponse({
     status: HttpStatus.UNPROCESSABLE_ENTITY,
@@ -93,7 +93,7 @@ export class AuthController {
   @Post('password/reset/send-otp')
   @UsePipes(new ValidationPipe())
   @ApiBody({ type: ResetPasswordRequestDto })
-  @ApiResponse({ status: HttpStatus.OK, description: 'OK', type: ResetPasswordResponseDto })
+  @ApiResponse({ status: HttpStatus.OK, type: ResetPasswordResponseDto })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'User not found' })
   @ApiResponse({
     schema: {
@@ -111,7 +111,7 @@ export class AuthController {
   @Post('password/reset/verify-otp')
   @UsePipes(new ValidationPipe())
   @ApiBody({ type: VerifyResetPasswordRequestDto })
-  @ApiResponse({ status: HttpStatus.OK, description: 'OK', type: VerifyResetPasswordResponseDto })
+  @ApiResponse({ status: HttpStatus.OK, type: VerifyResetPasswordResponseDto })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'User not found' })
   @ApiResponse({
     schema: {

@@ -1,26 +1,29 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsNumber, IsString } from 'class-validator';
 
 export class TokenDto {
   @ApiProperty()
-  token: string;
+  @IsString()
+  readonly token: string;
 
   @ApiProperty()
-  expiresIn: number;
+  @IsNumber()
+  readonly expiresIn: number;
 }
 
 export class TokenRenewRequestDto {
   @ApiProperty()
-  token: string;
+  readonly token: string;
 }
 
 export class TokenRenewResponseDto {
   @ApiProperty()
-  token: TokenDto;
+  readonly token: TokenDto;
 }
 
 export class TokenResponseDto {
   @ApiProperty()
-  access: TokenDto;
+  readonly access: TokenDto;
   @ApiProperty()
-  refresh: TokenDto;
+  readonly refresh: TokenDto;
 }

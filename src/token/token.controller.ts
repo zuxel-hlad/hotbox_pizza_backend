@@ -17,7 +17,7 @@ export class TokenController {
   @Post('renew')
   @ApiBody({ type: TokenRenewRequestDto })
   @ApiOperation({ summary: 'Renew access token' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'OK', type: TokenRenewResponseDto })
+  @ApiResponse({ status: HttpStatus.OK, type: TokenRenewResponseDto })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: 'User not found',
