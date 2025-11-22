@@ -1,9 +1,5 @@
-import {
-  CreatePizzaDtoRequest,
-  CreatePizzaDtoResponse,
-  UpdatePizzaDtoRequest,
-  UpdatePizzaDtoResponse,
-} from '@app/pizza/dto';
+import { validationsSettings } from '@app/common/dto.validation.settings';
+import { CreatePizzaDtoRequest, CreatePizzaDtoResponse, PizzaResponseDto, UpdatePizzaDtoRequest } from '@app/pizza/dto';
 import { PizzaEntity } from '@app/pizza/pizza.entity';
 import { PizzaService } from '@app/pizza/pizza.service';
 import { PizzaResponseInterface } from '@app/pizza/types/pizza.response.interface';
@@ -31,6 +27,31 @@ import { DeleteResult } from 'typeorm';
 export class PizzaController {
   constructor(private readonly pizzaService: PizzaService) {}
 
+  @Get('favorite')
+  @UseGuards(AuthGuard)
+  @ApiSecurity('Token')
+  @ApiResponse({ status: HttpStatus.OK, type: PizzaResponseDto })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, example: { statusCode: HttpStatus.NOT_FOUND, message: 'Not found' } })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    example: { statusCode: HttpStatus.UNAUTHORIZED, message: 'Unauthorized' },
+  })
+  @ApiOperation({ summary: 'Get favorite pizza' })
+  async getFavoritePizza(@User('id') userId: number): Promise<PizzaResponseInterface[]> {
+    return await this.pizzaService.getFavoritePizza(userId);
+  }
+
+  @Get(':id')
+  @ApiResponse({ status: HttpStatus.OK, type: CreatePizzaDtoResponse })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    example: { statusCode: HttpStatus.NOT_FOUND, message: 'Not found' },
+  })
+  @ApiOperation({ summary: 'Get single pizza' })
+  async getSinglePizza(@Param('id', ParseIntPipe) id: number): Promise<PizzaEntity> {
+    return await this.pizzaService.getSinglePizza(id);
+  }
+
   @Get()
   @ApiResponse({ status: HttpStatus.CREATED, type: CreatePizzaDtoResponse, isArray: true })
   @ApiOperation({ summary: 'Get all pizza' })
@@ -40,7 +61,7 @@ export class PizzaController {
 
   @Post('create')
   @UseGuards(AuthGuard)
-  @UsePipes(new ValidationPipe())
+  @UsePipes(new ValidationPipe(validationsSettings))
   @ApiSecurity('Token')
   @ApiBody({ type: CreatePizzaDtoRequest })
   @ApiResponse({ status: HttpStatus.CREATED, type: CreatePizzaDtoResponse })
@@ -58,11 +79,11 @@ export class PizzaController {
   }
 
   @Put('update/:id')
-  @UsePipes(new ValidationPipe())
   @UseGuards(AuthGuard)
+  @UsePipes(new ValidationPipe(validationsSettings))
   @ApiSecurity('Token')
   @ApiBody({ type: UpdatePizzaDtoRequest })
-  @ApiResponse({ status: HttpStatus.OK, type: UpdatePizzaDtoResponse })
+  @ApiResponse({ status: HttpStatus.OK, type: CreatePizzaDtoResponse })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
     example: { statusCode: HttpStatus.UNAUTHORIZED, message: 'Not authorized' },
@@ -97,13 +118,5 @@ export class PizzaController {
     @Param('id', ParseIntPipe) pizzaId: number,
   ): Promise<PizzaEntity> {
     return await this.pizzaService.toggleFavorite(userId, pizzaId);
-  }
-
-  @Get(':id')
-  @ApiResponse({ status: HttpStatus.OK, type: CreatePizzaDtoResponse })
-  @ApiResponse({ status: HttpStatus.BAD_REQUEST, example: { statusCode: HttpStatus.NOT_FOUND, message: 'Not found' } })
-  @ApiOperation({ summary: 'Get single pizza' })
-  async getSinglePizza(@Param('id', ParseIntPipe) id: number): Promise<PizzaEntity> {
-    return await this.pizzaService.getSinglePizza(id);
   }
 }

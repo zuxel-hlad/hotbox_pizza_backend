@@ -1,5 +1,6 @@
 import { AuthService } from '@app/auth/auth.service';
 import type { AuthResponseInterface } from '@app/auth/types/authResponse.interface';
+import { validationsSettings } from '@app/common/dto.validation.settings';
 import { TokenResponseDto } from '@app/token/dto';
 import { User } from '@app/user/decorators/user.decorator';
 import { UpdateUserDto, UpdateUserDtoRequest, UserResponseDto } from '@app/user/dto';
@@ -30,7 +31,7 @@ export class UserController {
 
   @Put('update')
   @UseGuards(AuthGuard)
-  @UsePipes(new ValidationPipe())
+  @UsePipes(new ValidationPipe(validationsSettings))
   @ApiOperation({ summary: 'Update logged user' })
   @ApiResponse({ status: HttpStatus.OK, type: TokenResponseDto })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Not authorized' })

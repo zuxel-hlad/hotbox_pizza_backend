@@ -1,3 +1,4 @@
+import { validationsSettings } from '@app/common/dto.validation.settings';
 import {
   CreateExtraIngredientRequestDto,
   CreateExtraIngredientResponseDto,
@@ -30,7 +31,7 @@ export class ExtraIngredientController {
   constructor(private readonly extraIngredientService: ExtraIngredientService) {}
 
   @Post('create')
-  @UsePipes(new ValidationPipe())
+  @UsePipes(new ValidationPipe(validationsSettings))
   @ApiSecurity('Token')
   @ApiBody({ type: CreateExtraIngredientRequestDto })
   @ApiResponse({ status: HttpStatus.OK, type: CreateExtraIngredientResponseDto })
@@ -54,7 +55,7 @@ export class ExtraIngredientController {
   })
   @ApiOperation({ summary: 'Update extra ingredient' })
   @UseGuards(AuthGuard)
-  @UsePipes(new ValidationPipe())
+  @UsePipes(new ValidationPipe(validationsSettings))
   async update(
     @Body() ingredientDto: UpdateExtraIngredientRequestDto,
     @Param('id', ParseIntPipe) ingredientId: number,
@@ -75,7 +76,7 @@ export class ExtraIngredientController {
   })
   @ApiOperation({ summary: 'Delete extra ingredient' })
   @UseGuards(AuthGuard)
-  @UsePipes(new ValidationPipe())
+  @UsePipes(new ValidationPipe(validationsSettings))
   async delete(@Param('id', ParseIntPipe) ingredientId: number): Promise<DeleteResult> {
     return await this.extraIngredientService.delete(ingredientId);
   }

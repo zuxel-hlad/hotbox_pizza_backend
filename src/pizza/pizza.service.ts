@@ -39,6 +39,18 @@ export class PizzaService {
     return pizza;
   }
 
+  async getFavoritePizza(id: number): Promise<PizzaResponseInterface[]> {
+    const user = await this.userRepository.findOne({ where: { id }, relations: ['favoritePizza'] });
+
+    if (!user) {
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    }
+
+    const pizzaResponse = user.favoritePizza.map((pizza) => ({ ...pizza, isFavorited: true }));
+
+    return pizzaResponse;
+  }
+
   async create(createPizzaDto: CreatePizzaDtoRequest): Promise<PizzaEntity> {
     const { nameEn, nameUa } = createPizzaDto;
     const isPizzaExist = await this.pizzaRepository.findOne({ where: { nameEn, nameUa } });
