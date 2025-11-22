@@ -18,6 +18,7 @@ import {
 } from '@app/auth/dto';
 import { AuthResponseInterface } from '@app/auth/types/authResponse.interface';
 import { ResetPasswordCodeResponseInterface } from '@app/auth/types/resetPasswordCodeResponse.interface';
+import { validationsSettings } from '@app/common/dto.validation.settings';
 import { User } from '@app/user/decorators/user.decorator';
 import { AuthGuard } from '@app/user/guards/auth.guard';
 import { Body, Controller, HttpStatus, Post, Put, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
@@ -29,7 +30,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  @UsePipes(new ValidationPipe())
+  @UsePipes(new ValidationPipe(validationsSettings))
   @ApiBody({ type: RegisterRequestDto })
   @ApiOperation({ summary: 'Register new user' })
   @ApiResponse({ status: HttpStatus.OK, type: RegisterResponseDto })
@@ -51,7 +52,7 @@ export class AuthController {
   }
 
   @Post('login')
-  @UsePipes(new ValidationPipe())
+  @UsePipes(new ValidationPipe(validationsSettings))
   @ApiBody({ type: LoginRequestDto })
   @ApiResponse({ status: HttpStatus.OK, type: LoginResponseDto })
   @ApiResponse({ status: HttpStatus.UNPROCESSABLE_ENTITY, description: 'Invalid credentials' })
@@ -64,7 +65,7 @@ export class AuthController {
 
   @Put('password/change')
   @UseGuards(AuthGuard)
-  @UsePipes(new ValidationPipe())
+  @UsePipes(new ValidationPipe(validationsSettings))
   @ApiSecurity('Token')
   @ApiBody({ type: ChangePasswordRequestDto })
   @ApiResponse({ status: HttpStatus.OK, type: ChangePasswordResponseDto })
@@ -91,7 +92,7 @@ export class AuthController {
   }
 
   @Post('password/reset/send-otp')
-  @UsePipes(new ValidationPipe())
+  @UsePipes(new ValidationPipe(validationsSettings))
   @ApiBody({ type: ResetPasswordRequestDto })
   @ApiResponse({ status: HttpStatus.OK, type: ResetPasswordResponseDto })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'User not found' })
@@ -109,7 +110,7 @@ export class AuthController {
   }
 
   @Post('password/reset/verify-otp')
-  @UsePipes(new ValidationPipe())
+  @UsePipes(new ValidationPipe(validationsSettings))
   @ApiBody({ type: VerifyResetPasswordRequestDto })
   @ApiResponse({ status: HttpStatus.OK, type: VerifyResetPasswordResponseDto })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'User not found' })

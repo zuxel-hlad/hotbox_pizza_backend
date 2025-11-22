@@ -7,8 +7,4 @@ export class CreatePizzaDtoResponse extends PizzaDto {
   @ApiProperty()
   @IsNumber()
   readonly favoritesCount: number;
-
-  @ApiProperty()
-  @IsNumber()
-  readonly isFavorited: boolean;
 }

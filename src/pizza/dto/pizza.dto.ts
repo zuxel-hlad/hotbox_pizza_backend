@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, IsUrl, ValidateNested } from 'class-validator';
-import { PizzaIngredientDto } from './pizza.ingredient.dto';
+import { PizzaIngredientResponseDto } from './pizza.ingredient.dto';
 
 export class PizzaDto {
   @IsUrl({ require_protocol: true, require_valid_protocol: true, protocols: ['http', 'https'] })
@@ -22,8 +22,9 @@ export class PizzaDto {
 
   @IsArray()
   @ValidateNested({ each: true })
-  @ApiProperty({ type: [PizzaIngredientDto] })
-  readonly ingredients: PizzaIngredientDto[];
+  @Type(() => PizzaIngredientResponseDto)
+  @ApiProperty({ type: [PizzaIngredientResponseDto] })
+  readonly ingredients: PizzaIngredientResponseDto[];
 
   @IsNotEmpty()
   @IsNumber()
