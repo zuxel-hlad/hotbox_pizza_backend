@@ -1,18 +1,23 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { PizzaIngredientInterface } from '@app/pizza/types/pizza.ingredient.interface';
+import { UserEntity } from '@app/user/user.entity';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('pizza_list')
 export class PizzaEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ default: '' })
   imgUrl: string;
 
   @Column()
-  name: string;
+  nameEn: string;
 
-  @Column('simple-array')
-  ingredients: string[];
+  @Column()
+  nameUa: string;
+
+  @Column('simple-json')
+  ingredients: PizzaIngredientInterface[];
 
   @Column()
   calories: number;
@@ -22,4 +27,7 @@ export class PizzaEntity {
 
   @Column({ default: 0 })
   favoritesCount: number;
+
+  @ManyToOne(() => UserEntity, (user) => user.favoritePizza, { onDelete: 'CASCADE' })
+  favoritedBy: UserEntity[];
 }

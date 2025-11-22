@@ -1,0 +1,53 @@
+{
+  "imgUrl": "https://i.pinimg.com/736x/30/90/9a/30909a149cfce0b93a42d6529f9d1563.jpg",
+  "nameEn": "Super Grill",
+  "nameUa": "Супер гриль",
+  "ingredients": [
+    {
+      "nameEn": "Okhotnichyi kolbaski",
+      "nameUa": "Охотничьи колбаски"
+    },
+    {
+      "nameEn": "Sosiski",
+      "nameUa": "Сосиски"
+    },
+    {
+      "nameEn": "Mozzarella",
+      "nameUa": "Моцарелла"
+    },
+    {
+      "nameEn": "Baklazhan",
+      "nameUa": "Баклажан"
+    },
+    {
+      "nameEn": "Tomaty",
+      "nameUa": "Томаты"
+    },
+    {
+      "nameEn": "Luk",
+      "nameUa": "Лук"
+    },
+    {
+      "nameEn": "Perets",
+      "nameUa": "Перец"
+    },
+    {
+      "nameEn": "Sous tomatnyi",
+      "nameUa": "Соус томатный"
+    },
+    {
+      "nameEn": "Sous BBQ",
+      "nameUa": "Соус BBQ"
+    },
+    {
+      "nameEn": "Zelenyi sous",
+      "nameUa": "Зеленый соус"
+    },
+    {
+      "nameEn": "Maionez",
+      "nameUa": "Майонез"
+    }
+  ],
+  "calories": 540,
+  "price": 130
+}
