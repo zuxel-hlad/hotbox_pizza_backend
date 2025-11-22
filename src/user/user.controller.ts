@@ -21,7 +21,7 @@ export class UserController {
   @Get('me')
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Get logged user' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'OK', type: UserResponseDto })
+  @ApiResponse({ status: HttpStatus.OK, type: UserResponseDto })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Not authorized' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Not found' })
   getLoggedUser(@User() user: UserEntity): UserResponseInterface {
@@ -32,7 +32,7 @@ export class UserController {
   @UseGuards(AuthGuard)
   @UsePipes(new ValidationPipe())
   @ApiOperation({ summary: 'Update logged user' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'OK', type: TokenResponseDto })
+  @ApiResponse({ status: HttpStatus.OK, type: TokenResponseDto })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Not authorized' })
   @ApiResponse({
     status: HttpStatus.UNPROCESSABLE_ENTITY,

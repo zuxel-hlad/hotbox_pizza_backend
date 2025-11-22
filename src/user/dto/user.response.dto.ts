@@ -2,25 +2,25 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class UserResponse {
   @ApiProperty()
-  id: number;
+  readonly id: number;
 
   @ApiProperty()
-  email: string;
+  readonly email: string;
 
   @ApiProperty()
-  username: string;
+  readonly username: string;
 
   @ApiProperty()
-  birthDate: string;
+  readonly birthDate: string;
 
   @ApiProperty()
-  bonuses: number;
+  readonly bonuses: number;
 
   @ApiProperty()
-  image: string;
+  readonly image: string;
 
   @ApiProperty()
-  phone: string;
+  readonly phone: string;
 }
 
 export class UserResponseDto {

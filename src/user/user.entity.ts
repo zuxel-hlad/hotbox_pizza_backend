@@ -1,5 +1,6 @@
+import { PizzaEntity } from '@app/pizza/pizza.entity';
 import { hash } from 'bcrypt';
-import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { BeforeInsert, Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity({ name: 'users' })
 export class UserEntity {
@@ -34,4 +35,8 @@ export class UserEntity {
   async hashPassword() {
     this.password = await hash(this.password, 10);
   }
+
+  @ManyToMany(() => PizzaEntity, (pizza) => pizza.favoritedBy, { onDelete: 'CASCADE' })
+  @JoinTable({ name: 'favorite_pizza' })
+  favoritePizza: PizzaEntity[];
 }
