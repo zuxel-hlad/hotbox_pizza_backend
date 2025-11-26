@@ -1,7 +1,15 @@
 import { validationsSettings } from '@app/common/dto.validation.settings';
-import { CreatePizzaDtoRequest, CreatePizzaDtoResponse, PizzaResponseDto, UpdatePizzaDtoRequest } from '@app/pizza/dto';
+import {
+  CreatePizzaDtoRequest,
+  CreatePizzaDtoResponse,
+  PagedPizzaRequestDto,
+  PagedPizzaResponseDto,
+  PizzaResponseDto,
+  UpdatePizzaDtoRequest,
+} from '@app/pizza/dto';
 import { PizzaEntity } from '@app/pizza/pizza.entity';
 import { PizzaService } from '@app/pizza/pizza.service';
+import { PagedPizzaResponseInterface } from '@app/pizza/types/paged.pizza.response.interface';
 import { PizzaResponseInterface } from '@app/pizza/types/pizza.response.interface';
 import { User } from '@app/user/decorators/user.decorator';
 import { AuthGuard } from '@app/user/guards/auth.guard';
@@ -15,6 +23,7 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  Query,
   UseGuards,
   UsePipes,
   ValidationPipe,
@@ -53,10 +62,14 @@ export class PizzaController {
   }
 
   @Get()
-  @ApiResponse({ status: HttpStatus.CREATED, type: CreatePizzaDtoResponse, isArray: true })
-  @ApiOperation({ summary: 'Get all pizza' })
-  async findAll(@User('id') userId: number): Promise<PizzaResponseInterface[]> {
-    return await this.pizzaService.findAll(userId);
+  @UsePipes(new ValidationPipe(validationsSettings))
+  @ApiResponse({ status: HttpStatus.CREATED, type: PagedPizzaResponseDto, isArray: true })
+  @ApiOperation({ summary: 'Get pizza paged' })
+  async findAll(
+    @User('id') userId: number,
+    @Query() query: PagedPizzaRequestDto,
+  ): Promise<PagedPizzaResponseInterface> {
+    return await this.pizzaService.findAll(userId, query);
   }
 
   @Post('create')
