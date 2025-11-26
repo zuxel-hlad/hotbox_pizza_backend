@@ -1,11 +1,13 @@
-import { CreatePizzaDtoRequest, UpdatePizzaDtoRequest } from '@app/pizza/dto';
+import { CreatePizzaDtoRequest, PagedPizzaRequestDto, UpdatePizzaDtoRequest } from '@app/pizza/dto';
 import { PizzaEntity } from '@app/pizza/pizza.entity';
+import { PizzaFiltersService } from '@app/pizza/pizza.filters.service';
+import { PagedPizzaResponseInterface } from '@app/pizza/types/paged.pizza.response.interface';
+import { PizzaResponseInterface } from '@app/pizza/types/pizza.response.interface';
 import { UserEntity } from '@app/user/user.entity';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DeleteResult } from 'typeorm/browser';
-import { PizzaResponseInterface } from './types/pizza.response.interface';
 
 @Injectable()
 export class PizzaService {
@@ -14,9 +16,10 @@ export class PizzaService {
     private readonly pizzaRepository: Repository<PizzaEntity>,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
+    private readonly pizzaFiltersService: PizzaFiltersService,
   ) {}
 
-  async findAll(userId: number): Promise<PizzaResponseInterface[]> {
+  async findAll(userId: number, query: PagedPizzaRequestDto): Promise<PagedPizzaResponseInterface> {
     let favoriteIds: number[] = [];
 
     if (userId) {
@@ -24,9 +27,12 @@ export class PizzaService {
       favoriteIds = user.favoritePizza.map((pizza) => pizza.id);
     }
 
-    const pizzas = await this.pizzaRepository.find();
+    const response = await this.pizzaFiltersService.getFilteredData(query);
 
-    return pizzas.map((pizza) => ({ ...pizza, isFavorited: favoriteIds.includes(pizza.id) }));
+    return {
+      ...response,
+      content: response.content.map((pizza) => ({ ...pizza, isFavorited: favoriteIds.includes(pizza.id) })),
+    };
   }
 
   async getSinglePizza(id: number): Promise<PizzaEntity> {
@@ -108,13 +114,6 @@ export class PizzaService {
     }
   }
 
-  generateId(): number {
-    const min = 1;
-    const max = 1_000_000_000;
-
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-  }
-
   async deleteSinglePizza(id: number): Promise<DeleteResult> {
     const pizza = await this.pizzaRepository.findOne({ where: { id } });
 
@@ -123,5 +122,12 @@ export class PizzaService {
     }
 
     return await this.pizzaRepository.delete({ id: pizza.id });
+  }
+
+  generateId(): number {
+    const min = 1;
+    const max = 1_000_000_000;
+
+    return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 }
