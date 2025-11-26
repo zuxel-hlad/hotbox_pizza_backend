@@ -63,7 +63,7 @@ export class PizzaController {
 
   @Get()
   @UsePipes(new ValidationPipe(validationsSettings))
-  @ApiResponse({ status: HttpStatus.CREATED, type: PagedPizzaResponseDto, isArray: true })
+  @ApiResponse({ status: HttpStatus.OK, type: PagedPizzaResponseDto, isArray: true })
   @ApiOperation({ summary: 'Get pizza paged' })
   async findAll(
     @User('id') userId: number,

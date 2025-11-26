@@ -1,8 +1,8 @@
+import { SortEnum } from '@app/pizza/constants';
 import { CreatePizzaDtoResponse } from '@app/pizza/dto/create.pizza.dto';
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
-import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
-import { SortEnum } from '../constants';
+import { Transform, Type } from 'class-transformer';
+import { IsArray, IsBoolean, IsEnum, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 
 export class PizzaResponseDto extends CreatePizzaDtoResponse {
   @IsBoolean()
@@ -80,5 +80,9 @@ export class PagedPizzaResponseDto {
   @ApiProperty()
   readonly prevPage: boolean;
 
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PizzaResponseDto)
+  @ApiProperty({ type: [PizzaResponseDto] })
   readonly content: PizzaResponseDto[];
 }
