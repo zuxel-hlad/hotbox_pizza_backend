@@ -1,5 +1,5 @@
 import { UserEntity } from '@app/user/user.entity';
 
-export interface UserResponseInterface {
+export interface UserResponse {
   user: Omit<UserEntity, 'hashPassword' | 'password'>;
 }

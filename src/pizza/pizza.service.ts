@@ -1,8 +1,8 @@
 import { CreatePizzaDtoRequest, PagedPizzaRequestDto, UpdatePizzaDtoRequest } from '@app/pizza/dto';
 import { PizzaEntity } from '@app/pizza/pizza.entity';
 import { PizzaFiltersService } from '@app/pizza/pizza.filters.service';
-import { PagedPizzaResponseInterface } from '@app/pizza/types/paged.pizza.response.interface';
-import { PizzaResponseInterface } from '@app/pizza/types/pizza.response.interface';
+import { PagedPizzaResponse } from '@app/pizza/types/paged.pizza.response.interface';
+import { PizzaResponse } from '@app/pizza/types/pizza.response.interface';
 import { UserEntity } from '@app/user/user.entity';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -19,7 +19,7 @@ export class PizzaService {
     private readonly pizzaFiltersService: PizzaFiltersService,
   ) {}
 
-  async findAll(userId: number, query: PagedPizzaRequestDto): Promise<PagedPizzaResponseInterface> {
+  async findAll(userId: number, query: PagedPizzaRequestDto): Promise<PagedPizzaResponse> {
     let favoriteIds: number[] = [];
 
     if (userId) {
@@ -45,7 +45,7 @@ export class PizzaService {
     return pizza;
   }
 
-  async getFavoritePizza(id: number): Promise<PizzaResponseInterface[]> {
+  async getFavoritePizza(id: number): Promise<PizzaResponse[]> {
     const user = await this.userRepository.findOne({ where: { id }, relations: ['favoritePizza'] });
 
     if (!user) {

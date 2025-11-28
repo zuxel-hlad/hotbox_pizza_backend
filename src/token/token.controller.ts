@@ -1,8 +1,9 @@
 import { AuthService } from '@app/auth/auth.service';
+import { validationsSettings } from '@app/common/dto.validation.settings';
 import { ACCESS_TOKEN_SECRET, ACCESS_TOKEN_TTL } from '@app/constants';
 import { TokenService } from '@app/token/token.service';
-import { TokenInterface } from '@app/token/types/token.interface';
-import { Body, Controller, HttpStatus, Post } from '@nestjs/common';
+import { Token } from '@app/token/types/token.interface';
+import { Body, Controller, HttpStatus, Post, UsePipes, ValidationPipe } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TokenRenewRequestDto, TokenRenewResponseDto } from './dto/token.response.dto';
 
@@ -34,8 +35,9 @@ export class TokenController {
       },
     },
   })
-  async renewToken(@Body('token') { token }: TokenRenewRequestDto): Promise<TokenInterface> {
-    const user = await this.tokenService.renewToken(token);
+  @UsePipes(new ValidationPipe(validationsSettings))
+  async renewToken(@Body() tokenDto: TokenRenewRequestDto): Promise<Token> {
+    const user = await this.tokenService.renewToken(tokenDto.token);
     return {
       token: this.authService.generateJwt(user, ACCESS_TOKEN_SECRET, ACCESS_TOKEN_TTL),
       expiresIn: ACCESS_TOKEN_TTL,

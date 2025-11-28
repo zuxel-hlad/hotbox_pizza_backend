@@ -1,10 +1,10 @@
-import type { ExpressRequestInterface } from '@app/user/types/expressRequest.interface';
+import type { ExpressRequest } from '@app/user/types/express.request.interface';
 import { CanActivate, ExecutionContext, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest<ExpressRequestInterface>();
+    const request = context.switchToHttp().getRequest<ExpressRequest>();
 
     if (request.user) {
       return true;

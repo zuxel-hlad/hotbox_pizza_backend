@@ -1,4 +1,4 @@
-import { PizzaIngredientInterface } from '@app/pizza/types/pizza.ingredient.interface';
+import { PizzaIngredient } from '@app/pizza/types/pizza.ingredient.interface';
 import { UserEntity } from '@app/user/user.entity';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
@@ -17,7 +17,7 @@ export class PizzaEntity {
   nameUa: string;
 
   @Column('simple-json')
-  ingredients: PizzaIngredientInterface[];
+  ingredients: PizzaIngredient[];
 
   @Column()
   calories: number;

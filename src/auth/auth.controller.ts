@@ -16,8 +16,8 @@ import {
   VerifyResetPasswordRequestDto,
   VerifyResetPasswordResponseDto,
 } from '@app/auth/dto';
-import { AuthResponseInterface } from '@app/auth/types/authResponse.interface';
-import { ResetPasswordCodeResponseInterface } from '@app/auth/types/resetPasswordCodeResponse.interface';
+import { AuthResponse } from '@app/auth/types/auth.response.interface';
+import { ResetPasswordCodeResponse } from '@app/auth/types/reset.password.code.response.interface';
 import { validationsSettings } from '@app/common/dto.validation.settings';
 import { User } from '@app/user/decorators/user.decorator';
 import { AuthGuard } from '@app/user/guards/auth.guard';
@@ -45,7 +45,7 @@ export class AuthController {
       },
     },
   })
-  async register(@Body('user') registerDto: RegisterDto): Promise<AuthResponseInterface> {
+  async register(@Body('user') registerDto: RegisterDto): Promise<AuthResponse> {
     const newUser = await this.authService.register(registerDto);
 
     return this.authService.buildAuthResponse(newUser);
@@ -57,7 +57,7 @@ export class AuthController {
   @ApiResponse({ status: HttpStatus.OK, type: LoginResponseDto })
   @ApiResponse({ status: HttpStatus.UNPROCESSABLE_ENTITY, description: 'Invalid credentials' })
   @ApiOperation({ summary: 'Login user' })
-  async login(@Body('user') LoginDto: LoginDto): Promise<AuthResponseInterface> {
+  async login(@Body('user') LoginDto: LoginDto): Promise<AuthResponse> {
     const loggedUser = await this.authService.login(LoginDto);
 
     return this.authService.buildAuthResponse(loggedUser);
@@ -85,7 +85,7 @@ export class AuthController {
   async changePassword(
     @Body('password') password: ChangePasswordDto,
     @User('id') userId: number,
-  ): Promise<AuthResponseInterface> {
+  ): Promise<AuthResponse> {
     const user = await this.authService.changePassword(password, userId);
 
     return this.authService.buildAuthResponse(user);
@@ -105,7 +105,7 @@ export class AuthController {
     },
   })
   @ApiOperation({ summary: 'Reset user password' })
-  async sendResetPasswordCode(@Body() resetPasswordDto: ResetPasswordDto): Promise<ResetPasswordCodeResponseInterface> {
+  async sendResetPasswordCode(@Body() resetPasswordDto: ResetPasswordDto): Promise<ResetPasswordCodeResponse> {
     return this.authService.sendResetPasswordCode(resetPasswordDto);
   }
 
@@ -123,9 +123,7 @@ export class AuthController {
     },
   })
   @ApiOperation({ summary: 'Verify reset password code' })
-  async verifyResetPasswordCode(
-    @Body() verifyResetPasswordDto: VerifyResetPasswordDto,
-  ): Promise<AuthResponseInterface> {
+  async verifyResetPasswordCode(@Body() verifyResetPasswordDto: VerifyResetPasswordDto): Promise<AuthResponse> {
     const user = await this.authService.verifyResetPasswordCode(verifyResetPasswordDto);
     return this.authService.buildAuthResponse(user);
   }
