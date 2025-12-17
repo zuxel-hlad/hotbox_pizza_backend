@@ -1,4 +1,7 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { OrderStatus, PaymentType } from '@app/order/constants';
+import { OrderPizzaDto } from '@app/order/dto';
+import { UserEntity } from '@app/user/user.entity';
+import { BeforeUpdate, Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('order_list')
 export class OrderEntity {
@@ -6,10 +9,13 @@ export class OrderEntity {
   id: number;
 
   @Column()
-  pizzas: number;
+  status: OrderStatus;
 
   @Column()
-  userId: number;
+  paymentType: PaymentType;
+
+  @Column('simple-json')
+  pizzas: OrderPizzaDto[];
 
   @Column()
   primaryPhone: string;
@@ -19,10 +25,21 @@ export class OrderEntity {
 
   @Column()
   comment: string;
-}
 
-// @Column({ default: false })
-// cheeseStuffedCrust: boolean;
-//
-// @Column({ default: false })
-// sausageStuffedCrust: boolean;
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt: Date;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  updatedAt: Date;
+
+  @BeforeUpdate()
+  updateTimestamp() {
+    this.updatedAt = new Date();
+  }
+
+  @ManyToOne(() => UserEntity, (user) => user.orders, { nullable: true, onDelete: 'SET NULL' })
+  user: UserEntity | null;
+
+  @Column({ nullable: true })
+  userId: number | null;
+}

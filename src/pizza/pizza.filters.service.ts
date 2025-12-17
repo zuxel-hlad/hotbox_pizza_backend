@@ -10,7 +10,7 @@ export class PizzaFiltersService {
   constructor(private dataSource: DataSource) {}
 
   async getFilteredData(query: PagedPizzaRequestDto): Promise<PagedData<PizzaEntity[]>> {
-    const { searchQuery, page, pageSize, price, priceMax, priceMin, favoritesCount, calories } = query;
+    const { searchQuery, price, priceMax, priceMin, favoritesCount, calories, page, pageSize } = query;
 
     const filterOptions: Record<string, SortEnum> = {};
     const search = searchQuery ? `%${searchQuery.toLowerCase()}%` : '%%';
@@ -51,7 +51,7 @@ export class PizzaFiltersService {
 
     const content = pizzas;
     const totalElements = pizzasCount;
-    const totalPages = Math.ceil(totalElements / query.pageSize);
+    const totalPages = Math.ceil(totalElements / pageSize);
     const pageNumber = page;
     const prevPage = page > 1;
     const nextPage = page < totalPages;
