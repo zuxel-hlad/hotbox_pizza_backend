@@ -1,6 +1,7 @@
+import { OrderEntity } from '@app/order/order.entity';
 import { PizzaEntity } from '@app/pizza/pizza.entity';
 import { hash } from 'bcrypt';
-import { BeforeInsert, Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { BeforeInsert, Column, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity({ name: 'users' })
 export class UserEntity {
@@ -39,4 +40,7 @@ export class UserEntity {
   @ManyToMany(() => PizzaEntity, (pizza) => pizza.favoritedBy, { onDelete: 'CASCADE' })
   @JoinTable({ name: 'favorite_pizza' })
   favoritePizza: PizzaEntity[];
+
+  @OneToMany(() => OrderEntity, (order) => order.user)
+  orders: OrderEntity[];
 }
