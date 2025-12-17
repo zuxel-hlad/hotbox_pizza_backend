@@ -1,5 +1,5 @@
 import { UpdateUserDto } from '@app/user/dto';
-import type { UserResponseInterface } from '@app/user/types/userResponse.interface';
+import type { UserResponse } from '@app/user/types/user.response.interface';
 import { UserEntity } from '@app/user/user.entity';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -39,7 +39,7 @@ export class UserService {
     });
   }
 
-  buildUserResponse(user: UserEntity): UserResponseInterface {
+  buildUserResponse(user: UserEntity): UserResponse {
     delete user.hashPassword;
     delete user.password;
     delete user.tokenVersion;

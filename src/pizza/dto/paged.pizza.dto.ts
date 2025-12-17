@@ -1,8 +1,9 @@
+import { createPaginationDto, PagedRequestDto } from '@app/common/dto/paged.dto';
 import { SortEnum } from '@app/pizza/constants';
 import { CreatePizzaDtoResponse } from '@app/pizza/dto/create.pizza.dto';
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsEnum, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsBoolean, IsEnum, IsOptional, IsString, Min } from 'class-validator';
 
 export class PizzaResponseDto extends CreatePizzaDtoResponse {
   @IsBoolean()
@@ -10,19 +11,7 @@ export class PizzaResponseDto extends CreatePizzaDtoResponse {
   isFavorited: boolean;
 }
 
-export class PagedPizzaRequestDto {
-  @Transform(({ value }: { value: string }) => Number(value))
-  @IsNumber()
-  @Min(1, { message: 'The page value must be at least 1.' })
-  @ApiProperty({ default: 1 })
-  readonly page: number;
-
-  @Transform(({ value }: { value: string }) => Number(value))
-  @IsNumber()
-  @Min(1, { message: 'The page size value must be at least 1.' })
-  @ApiProperty({ default: 1 })
-  readonly pageSize: number;
-
+export class PagedPizzaRequestDto extends PagedRequestDto {
   @IsOptional()
   @IsString()
   @ApiProperty({ required: false })
@@ -55,34 +44,4 @@ export class PagedPizzaRequestDto {
   readonly calories: SortEnum;
 }
 
-export class PagedPizzaResponseDto {
-  @IsNumber()
-  @ApiProperty()
-  readonly totalPages: number;
-
-  @IsNumber()
-  @ApiProperty()
-  readonly totalElements: number;
-
-  @IsNumber()
-  @ApiProperty()
-  readonly pageSize: number;
-
-  @IsNumber()
-  @ApiProperty()
-  readonly pageNumber: number;
-
-  @IsNumber()
-  @ApiProperty()
-  readonly nextPage: boolean;
-
-  @IsBoolean()
-  @ApiProperty()
-  readonly prevPage: boolean;
-
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => PizzaResponseDto)
-  @ApiProperty({ type: [PizzaResponseDto] })
-  readonly content: PizzaResponseDto[];
-}
+export class PagedPizzaResponseDto extends createPaginationDto(PagedPizzaRequestDto) {}

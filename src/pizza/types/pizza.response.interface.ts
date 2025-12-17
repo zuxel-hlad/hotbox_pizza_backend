@@ -1,5 +1,5 @@
 import { PizzaEntity } from '../pizza.entity';
 
-export interface PizzaResponseInterface extends PizzaEntity {
+export interface PizzaResponse extends PizzaEntity {
   isFavorited: boolean;
 }

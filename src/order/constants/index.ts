@@ -1,0 +1,13 @@
+export enum OrderStatus {
+  CANCELED = 'CANCELED',
+  DONE = 'DONE',
+  PENDING = 'PENDING',
+  PAID = 'PAID',
+}
+
+export enum PaymentType {
+  CASH_PAYMENT = 'CASH_PAYMENT',
+  ONLINE_PAYMENT = 'ONLINE_PAYMENT',
+  BONUS_PAYMENT = 'BONUS_PAYMENT',
+  WAIT_FOR_PAYMENT = 'WAIT_FOR_PAYMENT',
+}

@@ -9,8 +9,8 @@ import {
 } from '@app/pizza/dto';
 import { PizzaEntity } from '@app/pizza/pizza.entity';
 import { PizzaService } from '@app/pizza/pizza.service';
-import { PagedPizzaResponseInterface } from '@app/pizza/types/paged.pizza.response.interface';
-import { PizzaResponseInterface } from '@app/pizza/types/pizza.response.interface';
+import { PagedPizzaResponse } from '@app/pizza/types/paged.pizza.response.interface';
+import { PizzaResponse } from '@app/pizza/types/pizza.response.interface';
 import { User } from '@app/user/decorators/user.decorator';
 import { AuthGuard } from '@app/user/guards/auth.guard';
 import {
@@ -46,7 +46,7 @@ export class PizzaController {
     example: { statusCode: HttpStatus.UNAUTHORIZED, message: 'Unauthorized' },
   })
   @ApiOperation({ summary: 'Get favorite pizza' })
-  async getFavoritePizza(@User('id') userId: number): Promise<PizzaResponseInterface[]> {
+  async getFavoritePizza(@User('id') userId: number): Promise<PizzaResponse[]> {
     return await this.pizzaService.getFavoritePizza(userId);
   }
 
@@ -65,10 +65,7 @@ export class PizzaController {
   @UsePipes(new ValidationPipe(validationsSettings))
   @ApiResponse({ status: HttpStatus.OK, type: PagedPizzaResponseDto, isArray: true })
   @ApiOperation({ summary: 'Get pizza paged' })
-  async findAll(
-    @User('id') userId: number,
-    @Query() query: PagedPizzaRequestDto,
-  ): Promise<PagedPizzaResponseInterface> {
+  async findAll(@User('id') userId: number, @Query() query: PagedPizzaRequestDto): Promise<PagedPizzaResponse> {
     return await this.pizzaService.findAll(userId, query);
   }
 

@@ -1,15 +1,16 @@
 import { AuthService } from '@app/auth/auth.service';
-import type { AuthResponseInterface } from '@app/auth/types/authResponse.interface';
+import type { AuthResponse } from '@app/auth/types/auth.response.interface';
 import { validationsSettings } from '@app/common/dto.validation.settings';
 import { TokenResponseDto } from '@app/token/dto';
 import { User } from '@app/user/decorators/user.decorator';
 import { UpdateUserDto, UpdateUserDtoRequest, UserResponseDto } from '@app/user/dto';
 import { AuthGuard } from '@app/user/guards/auth.guard';
-import type { UserResponseInterface } from '@app/user/types/userResponse.interface';
+import type { UserResponse } from '@app/user/types/user.response.interface';
 import { UserEntity } from '@app/user/user.entity';
 import { UserService } from '@app/user/user.service';
 import { Body, Controller, Get, HttpStatus, Put, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
+
 @ApiTags('User Resource')
 @ApiSecurity('Token')
 @Controller('user')
@@ -25,7 +26,7 @@ export class UserController {
   @ApiResponse({ status: HttpStatus.OK, type: UserResponseDto })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Not authorized' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Not found' })
-  getLoggedUser(@User() user: UserEntity): UserResponseInterface {
+  getLoggedUser(@User() user: UserEntity): UserResponse {
     return this.userService.buildUserResponse(user);
   }
 
@@ -50,7 +51,7 @@ export class UserController {
   async updateLoggedUser(
     @User('id') userId: number,
     @Body('user') updateUserDto: UpdateUserDto,
-  ): Promise<AuthResponseInterface> {
+  ): Promise<AuthResponse> {
     const updatedUser = await this.userService.updateLoggedUser(userId, updateUserDto);
 
     return this.authService.buildAuthResponse(updatedUser);

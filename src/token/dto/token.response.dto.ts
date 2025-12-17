@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsString } from 'class-validator';
+import { IsJWT, IsNumber } from 'class-validator';
 
 export class TokenDto {
   @ApiProperty()
-  @IsString()
+  @IsJWT()
   readonly token: string;
 
   @ApiProperty()
@@ -12,11 +12,13 @@ export class TokenDto {
 }
 
 export class TokenRenewRequestDto {
+  @IsJWT()
   @ApiProperty()
   readonly token: string;
 }
 
 export class TokenRenewResponseDto {
+  @IsJWT()
   @ApiProperty()
   readonly token: TokenDto;
 }

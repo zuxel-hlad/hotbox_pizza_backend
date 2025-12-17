@@ -1,6 +1,6 @@
 import { ChangePasswordDto, LoginDto, RegisterDto, ResetPasswordDto, VerifyResetPasswordDto } from '@app/auth/dto';
-import { AuthResponseInterface } from '@app/auth/types/authResponse.interface';
-import { ResetPasswordCodeResponseInterface } from '@app/auth/types/resetPasswordCodeResponse.interface';
+import { AuthResponse } from '@app/auth/types/auth.response.interface';
+import { ResetPasswordCodeResponse } from '@app/auth/types/reset.password.code.response.interface';
 import { ACCESS_TOKEN_SECRET, ACCESS_TOKEN_TTL, REFRESH_TOKEN_SECRET, REFRESH_TOKEN_TTL } from '@app/constants';
 import { MailService } from '@app/mailer/mailer.service';
 import { UserEntity } from '@app/user/user.entity';
@@ -83,7 +83,7 @@ export class AuthService {
     return await this.userRepository.save(user);
   }
 
-  async sendResetPasswordCode({ email }: ResetPasswordDto): Promise<ResetPasswordCodeResponseInterface> {
+  async sendResetPasswordCode({ email }: ResetPasswordDto): Promise<ResetPasswordCodeResponse> {
     const user = await this.userRepository.findOne({ where: { email } });
 
     if (!user) {
@@ -115,7 +115,7 @@ export class AuthService {
     return await this.userRepository.save(user);
   }
 
-  buildAuthResponse(user: UserEntity): AuthResponseInterface {
+  buildAuthResponse(user: UserEntity): AuthResponse {
     return {
       access: {
         token: this.generateJwt(user, ACCESS_TOKEN_SECRET, ACCESS_TOKEN_TTL),

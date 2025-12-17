@@ -1,4 +1,4 @@
-export interface PizzaIngredientInterface {
+export interface PizzaIngredient {
   nameEn: string;
   nameUa: string;
 }
