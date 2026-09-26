@@ -12,15 +12,28 @@ export class PizzaFiltersService {
   async getFilteredData(query: PagedPizzaRequestDto): Promise<PagedData<PizzaEntity[]>> {
     const { searchQuery, price, priceMax, priceMin, favoritesCount, calories, page, pageSize } = query;
 
+    const uppercaseAlphabet = 'АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowercaseAlphabet = 'абвгґдеєжзиіїйклмнопрстуфхцчшщьюяabcdefghijklmnopqrstuvwxyz';
     const filterOptions: Record<string, SortEnum> = {};
-    const search = searchQuery ? `%${searchQuery.toLowerCase()}%` : '%%';
+    const normalizedSearchQuery = searchQuery?.trim().toLocaleLowerCase('uk-UA').replace(/\s+/g, '%');
+    const search = normalizedSearchQuery ? `%${normalizedSearchQuery}%` : '%%';
 
     const baseQuery = this.dataSource
       .getRepository(PizzaEntity)
       .createQueryBuilder('pizza')
       .where(
-        new Brackets((qb) => {
-          qb.where('pizza.nameUa ILIKE :search', { search }).orWhere('pizza.nameEn ILIKE :search', { search });
+        new Brackets((queryBuilder) => {
+          queryBuilder
+            .where("translate(COALESCE(pizza.nameUa, ''), :uppercaseAlphabet, :lowercaseAlphabet) LIKE :search", {
+              search,
+              uppercaseAlphabet,
+              lowercaseAlphabet,
+            })
+            .orWhere("translate(COALESCE(pizza.nameEn, ''), :uppercaseAlphabet, :lowercaseAlphabet) LIKE :search", {
+              search,
+              uppercaseAlphabet,
+              lowercaseAlphabet,
+            });
         }),
       );
 
