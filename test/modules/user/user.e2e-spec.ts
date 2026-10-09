@@ -77,6 +77,21 @@ describe('User (e2e)', () => {
         .expect(400);
     });
 
+    it('rejects a taken username', async () => {
+      userRepository.findOne
+        .mockResolvedValueOnce({ ...user })
+        .mockResolvedValueOnce({ ...user })
+        .mockResolvedValueOnce({ id: 2 });
+
+      const response = await request(server)
+        .put('/user/update')
+        .set('Authorization', authHeader)
+        .send({ user: { username: 'taken' } })
+        .expect(422);
+
+      expect(response.body).toMatchObject({ message: 'Username has been taken' });
+    });
+
     it('rejects a taken email', async () => {
       userRepository.findOne
         .mockResolvedValueOnce({ ...user })

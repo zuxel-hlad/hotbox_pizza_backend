@@ -13,16 +13,21 @@ export class TokenService {
   ) {}
 
   async renewToken(token: string): Promise<UserEntity> {
+    const userId = this.verifyRefreshToken(token);
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
+  private verifyRefreshToken(token: string): number {
     try {
-      const { id: userId } = verify(token, REFRESH_TOKEN_SECRET) as UserEntity;
+      const { id } = verify(token, REFRESH_TOKEN_SECRET) as UserEntity;
 
-      const user = await this.userRepository.findOne({ where: { id: userId } });
-
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-
-      return user;
+      return id;
     } catch (error) {
       if (error instanceof Error) {
         if (error.name === 'TokenExpiredError') {
