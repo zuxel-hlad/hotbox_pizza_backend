@@ -1,3 +1,4 @@
+import { toPagedData } from '@common/helpers/paged.helper';
 import { PagedData } from '@common/types/paged-data.interface';
 import { PagedOrdersRequestDto } from '@modules/order/dto/paged-orders.dto';
 import { OrderEntity } from '@modules/order/order.entity';
@@ -15,7 +16,7 @@ export class OrderFilterService {
 
   async getFilteredData(query: PagedOrdersRequestDto): Promise<PagedData<OrderResponse[]>> {
     const { page, pageSize, orderId, createdAt, ...rest } = query;
-    const where: FindOptionsWhere<OrderEntity> | FindOptionsWhere<OrderEntity>[] = { id: orderId, ...rest };
+    const where: FindOptionsWhere<OrderEntity> = { id: orderId, ...rest };
 
     if (createdAt) {
       const start = new Date(`${createdAt}T00:00:00.000Z`);
@@ -31,19 +32,6 @@ export class OrderFilterService {
       order: { createdAt: 'DESC' },
     });
 
-    const totalPages = Math.ceil(totalElements / pageSize);
-    const pageNumber = page;
-    const prevPage = page > 1;
-    const nextPage = page < totalPages;
-
-    return {
-      totalPages,
-      totalElements,
-      pageSize,
-      pageNumber,
-      nextPage,
-      prevPage,
-      content,
-    };
+    return toPagedData(content, totalElements, page, pageSize);
   }
 }

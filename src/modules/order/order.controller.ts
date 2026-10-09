@@ -47,6 +47,10 @@ export class OrderController {
   @UsePipes(new ValidationPipe(validationsSettings))
   @ApiResponse({ status: HttpStatus.OK, type: CreateOrderResultDto })
   @ApiResponse({ example: { statusCode: HttpStatus.NOT_FOUND, message: 'Order not found' } })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    example: { statusCode: HttpStatus.BAD_REQUEST, message: 'Pizza 1 not found' },
+  })
   @ApiOperation({ summary: 'Get order result' })
   async getOrderResult(@Param('id', ParseIntPipe) orderId: number): Promise<CreateOrderResultDto> {
     return await this.orderService.buildCreateOrderResult(orderId);
@@ -56,6 +60,10 @@ export class OrderController {
   @UsePipes(new ValidationPipe(validationsSettings))
   @ApiBody({ type: CreateOrderRequestDto })
   @ApiResponse({ status: HttpStatus.CREATED, type: CreateOrderResponseDto })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    example: { statusCode: HttpStatus.BAD_REQUEST, message: 'Pizza cannot have both cheese and sausage stuffed crust' },
+  })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
     example: { statusCode: HttpStatus.UNAUTHORIZED, message: 'Not authorized' },
