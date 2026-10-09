@@ -15,7 +15,7 @@ import { Repository } from 'typeorm';
 
 describe('AuthService', () => {
   const password = 'password123';
-  const mailService = { sendMail: jest.fn() };
+  const mailService = { sendResetCode: jest.fn() };
   let passwordHash: string;
   let userRepository: RepositoryMock;
   let authService: AuthService;
@@ -36,7 +36,7 @@ describe('AuthService', () => {
 
   beforeEach(() => {
     userRepository = createRepositoryMock();
-    mailService.sendMail.mockReset();
+    mailService.sendResetCode.mockReset();
     authService = new AuthService(
       userRepository as unknown as Repository<UserEntity>,
       mailService as unknown as MailService,
@@ -165,7 +165,7 @@ describe('AuthService', () => {
       const response = await authService.sendResetPasswordCode({ email: 'john@x.com' });
 
       expect(authService.otpCode).toMatch(/^\d{6}$/);
-      expect(mailService.sendMail).toHaveBeenCalledWith('john@x.com', 'Password reset code', authService.otpCode);
+      expect(mailService.sendResetCode).toHaveBeenCalledWith('john@x.com', authService.otpCode);
       expect(response).toEqual({ message: 'Reset password code sent to jo*n@x.com', statusCode: HttpStatus.OK });
     });
   });
