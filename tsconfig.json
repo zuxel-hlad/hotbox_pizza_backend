@@ -23,7 +23,8 @@
       "@/*": ["./src/*"],
       "@common/*": ["./src/common/*"],
       "@core/*": ["./src/core/*"],
-      "@modules/*": ["./src/modules/*"]
+      "@modules/*": ["./src/modules/*"],
+      "@test/*": ["./test/*"]
     }
   }
 }

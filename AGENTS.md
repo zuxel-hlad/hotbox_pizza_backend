@@ -51,7 +51,7 @@ dto/    create-order.dto.ts, paged-orders.dto.ts, ...
 types/  order-response.ts, paged-order-response.ts, ...
 ```
 
-Path aliases (tsconfig + jest): `@/*` -> `src/*`, `@common/*`, `@core/*`, `@modules/*`. Always import via aliases.
+Path aliases (tsconfig + jest): `@/*` -> `src/*`, `@common/*`, `@core/*`, `@modules/*`, `@test/*` -> `test/*`. Always import via aliases.
 
 ## Code principles
 
