@@ -38,13 +38,13 @@ describe('ExtraIngredient (e2e)', () => {
 
   describe('POST /extra-ingredient/create', () => {
     it('creates an ingredient without authorization (known gap)', async () => {
-      ingredientRepository.findOne.mockResolvedValue(null);
+      ingredientRepository.existsBy.mockResolvedValue(false);
 
       await request(server).post('/extra-ingredient/create').send(newIngredient).expect(201, newIngredient);
     });
 
     it('rejects a duplicate', async () => {
-      ingredientRepository.findOne.mockResolvedValue(ingredient);
+      ingredientRepository.existsBy.mockResolvedValue(true);
 
       const response = await request(server).post('/extra-ingredient/create').send(newIngredient).expect(400);
 
@@ -94,13 +94,19 @@ describe('ExtraIngredient (e2e)', () => {
 
     it('deletes an ingredient', async () => {
       authorize();
-      ingredientRepository.findOne.mockResolvedValue(ingredient);
       ingredientRepository.delete.mockResolvedValue({ raw: [], affected: 1 });
 
       await request(server)
         .delete('/extra-ingredient/delete/1')
         .set('Authorization', authHeader)
         .expect(200, { raw: [], affected: 1 });
+    });
+
+    it('responds 404 for an unknown ingredient', async () => {
+      authorize();
+      ingredientRepository.delete.mockResolvedValue({ raw: [], affected: 0 });
+
+      await request(server).delete('/extra-ingredient/delete/1').set('Authorization', authHeader).expect(404);
     });
   });
 });

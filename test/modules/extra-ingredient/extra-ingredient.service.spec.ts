@@ -18,7 +18,7 @@ describe('ExtraIngredientService', () => {
 
   describe('create', () => {
     it('rejects a duplicate', async () => {
-      ingredientRepository.findOne.mockResolvedValue({ id: 1, ...ingredientDto });
+      ingredientRepository.existsBy.mockResolvedValue(true);
 
       await expect(ingredientService.create(ingredientDto)).rejects.toMatchObject({
         message: 'Extra ingredient already exist.',
@@ -27,7 +27,7 @@ describe('ExtraIngredientService', () => {
     });
 
     it('saves a new ingredient', async () => {
-      ingredientRepository.findOne.mockResolvedValue(null);
+      ingredientRepository.existsBy.mockResolvedValue(false);
 
       const ingredient = await ingredientService.create(ingredientDto);
 
@@ -55,18 +55,16 @@ describe('ExtraIngredientService', () => {
 
   describe('delete', () => {
     it('rejects an unknown ingredient', async () => {
-      ingredientRepository.findOne.mockResolvedValue(null);
+      ingredientRepository.delete.mockResolvedValue({ affected: 0 });
 
       await expect(ingredientService.delete(1)).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND });
     });
 
-    it('deletes the found ingredient', async () => {
-      const ingredient = { id: 1, ...ingredientDto };
-      ingredientRepository.findOne.mockResolvedValue(ingredient);
+    it('deletes the ingredient by id', async () => {
       ingredientRepository.delete.mockResolvedValue({ affected: 1 });
 
       await expect(ingredientService.delete(1)).resolves.toEqual({ affected: 1 });
-      expect(ingredientRepository.delete).toHaveBeenCalledWith(ingredient);
+      expect(ingredientRepository.delete).toHaveBeenCalledWith(1);
     });
   });
 
