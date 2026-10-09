@@ -38,9 +38,6 @@ export class TokenController {
   @UsePipes(new ValidationPipe(validationsSettings))
   async renewToken(@Body() tokenDto: TokenRenewRequestDto): Promise<Token> {
     const user = await this.tokenService.renewToken(tokenDto.token);
-    return {
-      token: this.authService.generateJwt(user, ACCESS_TOKEN_SECRET, ACCESS_TOKEN_TTL),
-      expiresIn: ACCESS_TOKEN_TTL,
-    };
+    return this.authService.buildToken(user, ACCESS_TOKEN_SECRET, ACCESS_TOKEN_TTL);
   }
 }

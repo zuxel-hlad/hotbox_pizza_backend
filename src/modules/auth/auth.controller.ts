@@ -2,25 +2,14 @@ import { validationsSettings } from '@common/constants/validation.constants';
 import { User } from '@common/decorators/user.decorator';
 import { AuthGuard } from '@core/guards/auth.guard';
 import { AuthService } from '@modules/auth/auth.service';
-import {
-  ChangePasswordDto,
-  ChangePasswordRequestDto,
-  ChangePasswordResponseDto,
-} from '@modules/auth/dto/change-password.dto';
-import { LoginDto, LoginRequestDto, LoginResponseDto } from '@modules/auth/dto/login.dto';
-import { RegisterDto, RegisterRequestDto, RegisterResponseDto } from '@modules/auth/dto/register.dto';
-import {
-  ResetPasswordDto,
-  ResetPasswordRequestDto,
-  ResetPasswordResponseDto,
-} from '@modules/auth/dto/reset-password.dto';
-import {
-  VerifyResetPasswordDto,
-  VerifyResetPasswordRequestDto,
-  VerifyResetPasswordResponseDto,
-} from '@modules/auth/dto/verify-reset-password.dto';
+import { ChangePasswordDto, ChangePasswordRequestDto } from '@modules/auth/dto/change-password.dto';
+import { LoginDto, LoginRequestDto } from '@modules/auth/dto/login.dto';
+import { RegisterDto, RegisterRequestDto } from '@modules/auth/dto/register.dto';
+import { ResetPasswordDto, ResetPasswordResponseDto } from '@modules/auth/dto/reset-password.dto';
+import { VerifyResetPasswordDto } from '@modules/auth/dto/verify-reset-password.dto';
 import { AuthResponse } from '@modules/auth/types/auth-response.interface';
 import { ResetPasswordCodeResponse } from '@modules/auth/types/reset-password-code-response.interface';
+import { TokenResponseDto } from '@modules/token/dto/token-response.dto';
 import { Body, Controller, HttpStatus, Post, Put, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
 
@@ -33,7 +22,7 @@ export class AuthController {
   @UsePipes(new ValidationPipe(validationsSettings))
   @ApiBody({ type: RegisterRequestDto })
   @ApiOperation({ summary: 'Register new user' })
-  @ApiResponse({ status: HttpStatus.OK, type: RegisterResponseDto })
+  @ApiResponse({ status: HttpStatus.OK, type: TokenResponseDto })
   @ApiResponse({
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     description: 'Validation errors',
@@ -54,7 +43,7 @@ export class AuthController {
   @Post('login')
   @UsePipes(new ValidationPipe(validationsSettings))
   @ApiBody({ type: LoginRequestDto })
-  @ApiResponse({ status: HttpStatus.OK, type: LoginResponseDto })
+  @ApiResponse({ status: HttpStatus.OK, type: TokenResponseDto })
   @ApiResponse({ status: HttpStatus.UNPROCESSABLE_ENTITY, description: 'Invalid credentials' })
   @ApiOperation({ summary: 'Login user' })
   async login(@Body('user') LoginDto: LoginDto): Promise<AuthResponse> {
@@ -68,7 +57,7 @@ export class AuthController {
   @UsePipes(new ValidationPipe(validationsSettings))
   @ApiSecurity('Token')
   @ApiBody({ type: ChangePasswordRequestDto })
-  @ApiResponse({ status: HttpStatus.OK, type: ChangePasswordResponseDto })
+  @ApiResponse({ status: HttpStatus.OK, type: TokenResponseDto })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'User not found' })
   @ApiResponse({
     status: HttpStatus.UNPROCESSABLE_ENTITY,
@@ -93,7 +82,6 @@ export class AuthController {
 
   @Post('password/reset/send-otp')
   @UsePipes(new ValidationPipe(validationsSettings))
-  @ApiBody({ type: ResetPasswordRequestDto })
   @ApiResponse({ status: HttpStatus.OK, type: ResetPasswordResponseDto })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'User not found' })
   @ApiResponse({
@@ -111,8 +99,7 @@ export class AuthController {
 
   @Post('password/reset/verify-otp')
   @UsePipes(new ValidationPipe(validationsSettings))
-  @ApiBody({ type: VerifyResetPasswordRequestDto })
-  @ApiResponse({ status: HttpStatus.OK, type: VerifyResetPasswordResponseDto })
+  @ApiResponse({ status: HttpStatus.OK, type: TokenResponseDto })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'User not found' })
   @ApiResponse({
     schema: {

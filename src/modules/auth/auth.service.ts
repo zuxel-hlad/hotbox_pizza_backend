@@ -14,12 +14,13 @@ import { VerifyResetPasswordDto } from '@modules/auth/dto/verify-reset-password.
 import { AuthResponse } from '@modules/auth/types/auth-response.interface';
 import { ResetPasswordCodeResponse } from '@modules/auth/types/reset-password-code-response.interface';
 import { MailService } from '@modules/mail/mail.service';
+import { Token } from '@modules/token/types/token.interface';
 import { UserEntity } from '@modules/user/user.entity';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { compare, hash } from 'bcrypt';
 import { sign } from 'jsonwebtoken';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 
 @Injectable()
 export class AuthService {
@@ -47,13 +48,8 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto): Promise<UserEntity> {
-    const user = await this.findCurrentUser({ email: loginDto.email });
-
-    if (!user) {
-      throw new HttpException('Invalid credentials', HttpStatus.UNPROCESSABLE_ENTITY);
-    }
-
-    const isPasswordValid = await compare(loginDto.password, user.password);
+    const user = await this.findWithPassword({ email: loginDto.email });
+    const isPasswordValid = user && (await compare(loginDto.password, user.password));
 
     if (!isPasswordValid) {
       throw new HttpException('Invalid credentials', HttpStatus.UNPROCESSABLE_ENTITY);
@@ -62,25 +58,8 @@ export class AuthService {
     return user;
   }
 
-  async findCurrentUser(user: Partial<UserEntity>): Promise<UserEntity> {
-    return await this.userRepository.findOne({
-      where: { id: user.id, email: user.email, username: user.username, tokenVersion: user.tokenVersion },
-      select: {
-        birthDate: true,
-        bonuses: true,
-        email: true,
-        id: true,
-        image: true,
-        password: true,
-        phone: true,
-        username: true,
-        tokenVersion: true,
-      },
-    });
-  }
-
   async changePassword(password: ChangePasswordDto, userId: number): Promise<UserEntity> {
-    const user = await this.findCurrentUser({ id: userId });
+    const user = await this.findWithPassword({ id: userId });
 
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
@@ -96,19 +75,11 @@ export class AuthService {
       throw new HttpException('Old password is incorrect.', HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
-    const hashedNewPassword = await hash(password.newPassword, 10);
-    user.password = hashedNewPassword;
-    user.tokenVersion += 1;
-
-    return await this.userRepository.save(user);
+    return this.setPassword(user, password.newPassword);
   }
 
   async sendResetPasswordCode({ email }: ResetPasswordDto): Promise<ResetPasswordCodeResponse> {
-    const user = await this.userRepository.findOne({ where: { email } });
-
-    if (!user) {
-      throw new HttpException(`The email "${email}" not found. Incorrect email.`, HttpStatus.UNPROCESSABLE_ENTITY);
-    }
+    await this.findByEmailOrFail(email);
 
     this.otpCode = generateOTP();
     await this.mailService.sendMail(email, 'Password reset code', this.otpCode);
@@ -121,43 +92,44 @@ export class AuthService {
       throw new HttpException('Invalid otp code', HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
+    const user = await this.findByEmailOrFail(email);
+    this.otpCode = null;
+
+    return this.setPassword(user, password);
+  }
+
+  buildAuthResponse(user: UserEntity): AuthResponse {
+    return {
+      access: this.buildToken(user, ACCESS_TOKEN_SECRET, ACCESS_TOKEN_TTL),
+      refresh: this.buildToken(user, REFRESH_TOKEN_SECRET, REFRESH_TOKEN_TTL),
+    };
+  }
+
+  buildToken({ id, username, email, tokenVersion }: UserEntity, secret: string, expiresIn: number): Token {
+    return { token: sign({ id, username, email, tokenVersion }, secret, { expiresIn }), expiresIn };
+  }
+
+  private findWithPassword(where: FindOptionsWhere<UserEntity>): Promise<UserEntity> {
+    return this.userRepository.findOne({
+      where,
+      select: { id: true, email: true, username: true, tokenVersion: true, password: true },
+    });
+  }
+
+  private async findByEmailOrFail(email: string): Promise<UserEntity> {
     const user = await this.userRepository.findOne({ where: { email } });
 
     if (!user) {
       throw new HttpException(`The email "${email}" not found. Incorrect email.`, HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
-    const hashedNewPassword = await hash(password, 10);
-    user.password = hashedNewPassword;
+    return user;
+  }
+
+  private async setPassword(user: UserEntity, password: string): Promise<UserEntity> {
+    user.password = await hash(password, 10);
     user.tokenVersion += 1;
-    this.otpCode = null;
 
-    return await this.userRepository.save(user);
-  }
-
-  buildAuthResponse(user: UserEntity): AuthResponse {
-    return {
-      access: {
-        token: this.generateJwt(user, ACCESS_TOKEN_SECRET, ACCESS_TOKEN_TTL),
-        expiresIn: ACCESS_TOKEN_TTL,
-      },
-      refresh: {
-        token: this.generateJwt(user, REFRESH_TOKEN_SECRET, REFRESH_TOKEN_TTL),
-        expiresIn: REFRESH_TOKEN_TTL,
-      },
-    };
-  }
-
-  generateJwt(user: UserEntity, secret: string, expiresIn: number): string {
-    return sign(
-      {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        tokenVersion: user.tokenVersion,
-      },
-      secret,
-      { expiresIn },
-    );
+    return this.userRepository.save(user);
   }
 }
