@@ -2,7 +2,7 @@ import { PagedPizzaRequestDto } from '@modules/pizza/dto/paged-pizza.dto';
 import { PizzaFiltersService } from '@modules/pizza/pizza-filters.service';
 import { SortEnum } from '@modules/pizza/pizza.constants';
 import { createQueryBuilderMock, QueryBuilderMock } from '@test/helpers/query-builder.mock';
-import { Brackets, DataSource } from 'typeorm';
+import { DataSource } from 'typeorm';
 
 describe('PizzaFiltersService', () => {
   let queryBuilder: QueryBuilderMock;
@@ -12,10 +12,7 @@ describe('PizzaFiltersService', () => {
     pizzaFiltersService.getFilteredData({ page: 1, pageSize: 10, ...query } as PagedPizzaRequestDto);
 
   const getSearchParameter = (): string => {
-    const nestedBuilder = createQueryBuilderMock();
-    const [brackets] = queryBuilder.where.mock.calls[0] as [Brackets];
-    brackets.whereFactory(nestedBuilder as never);
-    const [, parameters] = nestedBuilder.where.mock.calls[0] as [string, { search: string }];
+    const [, parameters] = queryBuilder.where.mock.calls[0] as [string, { search: string }];
 
     return parameters.search;
   };
@@ -28,7 +25,7 @@ describe('PizzaFiltersService', () => {
 
   it.each([
     [undefined, '%%'],
-    ['  Маргарита  Пепероні ', '%маргарита%пепероні%'],
+    ['  Маргарита  Пепероні ', '%Маргарита%Пепероні%'],
   ])('normalizes the search query %p', async (searchQuery, search) => {
     await getFilteredData({ searchQuery });
 

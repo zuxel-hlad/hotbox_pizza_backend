@@ -11,3 +11,7 @@ export enum PaymentType {
   BONUS_PAYMENT = 'BONUS_PAYMENT',
   WAIT_FOR_PAYMENT = 'WAIT_FOR_PAYMENT',
 }
+
+export const CHEESE_CRUST_PRICE = 50;
+export const SAUSAGE_CRUST_PRICE = 70;
+export const ORDER_BONUSES = 100;

@@ -30,18 +30,12 @@ export class PagedOrdersRequestDto extends PagedRequestDto {
 
   @IsOptional()
   @IsEnum(OrderStatus)
-  @ApiProperty({
-    required: false,
-    description: `${OrderStatus.PAID} /  ${OrderStatus.CANCELED} / ${OrderStatus.DONE} / ${OrderStatus.PENDING}`,
-  })
+  @ApiProperty({ required: false, enum: OrderStatus })
   readonly status: OrderStatus;
 
   @IsOptional()
   @IsEnum(PaymentType)
-  @ApiProperty({
-    required: false,
-    description: `${PaymentType.BONUS_PAYMENT} / ${PaymentType.CASH_PAYMENT} / ${PaymentType.ONLINE_PAYMENT} / ${PaymentType.WAIT_FOR_PAYMENT}`,
-  })
+  @ApiProperty({ required: false, enum: PaymentType })
   readonly paymentType: PaymentType;
 
   @IsOptional()

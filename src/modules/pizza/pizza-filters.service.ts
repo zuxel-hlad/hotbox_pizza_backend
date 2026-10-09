@@ -1,9 +1,10 @@
+import { toPagedData } from '@common/helpers/paged.helper';
 import { PagedData } from '@common/types/paged-data.interface';
 import { PagedPizzaRequestDto } from '@modules/pizza/dto/paged-pizza.dto';
 import { SortEnum } from '@modules/pizza/pizza.constants';
 import { PizzaEntity } from '@modules/pizza/pizza.entity';
 import { Injectable } from '@nestjs/common';
-import { Brackets, DataSource } from 'typeorm';
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class PizzaFiltersService {
@@ -12,30 +13,14 @@ export class PizzaFiltersService {
   async getFilteredData(query: PagedPizzaRequestDto): Promise<PagedData<PizzaEntity[]>> {
     const { searchQuery, price, priceMax, priceMin, favoritesCount, calories, page, pageSize } = query;
 
-    const uppercaseAlphabet = 'АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const lowercaseAlphabet = 'абвгґдеєжзиіїйклмнопрстуфхцчшщьюяabcdefghijklmnopqrstuvwxyz';
     const filterOptions: Record<string, SortEnum> = {};
-    const normalizedSearchQuery = searchQuery?.trim().toLocaleLowerCase('uk-UA').replace(/\s+/g, '%');
+    const normalizedSearchQuery = searchQuery?.trim().replace(/\s+/g, '%');
     const search = normalizedSearchQuery ? `%${normalizedSearchQuery}%` : '%%';
 
     const baseQuery = this.dataSource
       .getRepository(PizzaEntity)
       .createQueryBuilder('pizza')
-      .where(
-        new Brackets((queryBuilder) => {
-          queryBuilder
-            .where("translate(COALESCE(pizza.nameUa, ''), :uppercaseAlphabet, :lowercaseAlphabet) LIKE :search", {
-              search,
-              uppercaseAlphabet,
-              lowercaseAlphabet,
-            })
-            .orWhere("translate(COALESCE(pizza.nameEn, ''), :uppercaseAlphabet, :lowercaseAlphabet) LIKE :search", {
-              search,
-              uppercaseAlphabet,
-              lowercaseAlphabet,
-            });
-        }),
-      );
+      .where('(pizza.nameUa ILIKE :search OR pizza.nameEn ILIKE :search)', { search });
 
     if (priceMin && priceMax) {
       baseQuery.andWhere('pizza.price BETWEEN :priceMin AND :priceMax', { priceMin, priceMax });
@@ -62,21 +47,6 @@ export class PizzaFiltersService {
       .orderBy(filterOptions)
       .getMany();
 
-    const content = pizzas;
-    const totalElements = pizzasCount;
-    const totalPages = Math.ceil(totalElements / pageSize);
-    const pageNumber = page;
-    const prevPage = page > 1;
-    const nextPage = page < totalPages;
-
-    return {
-      totalPages,
-      totalElements,
-      pageSize,
-      pageNumber,
-      nextPage,
-      prevPage,
-      content,
-    };
+    return toPagedData(pizzas, pizzasCount, page, pageSize);
   }
 }
