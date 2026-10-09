@@ -1,8 +1,3 @@
-if (!process.env.IS_TS_NODE) {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  require('module-alias/register');
-}
-
 import { AppModule } from '@app/app/app.module';
 import { HttpExceptionFilter } from '@app/common/http.exception.filter';
 import { NestFactory } from '@nestjs/core';

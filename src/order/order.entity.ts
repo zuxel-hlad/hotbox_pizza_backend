@@ -8,10 +8,10 @@ export class OrderEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ type: 'varchar' })
   status: OrderStatus;
 
-  @Column()
+  @Column({ type: 'varchar' })
   paymentType: PaymentType;
 
   @Column('simple-json')

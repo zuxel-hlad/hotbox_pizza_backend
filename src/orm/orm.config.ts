@@ -1,7 +1,7 @@
 import { join } from 'path';
-import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
+import { PostgresDataSourceOptions } from 'typeorm/driver/postgres/PostgresDataSourceOptions';
 
-const config: PostgresConnectionOptions = {
+const config: PostgresDataSourceOptions = {
   type: 'postgres',
   host: 'localhost',
   port: 5432,

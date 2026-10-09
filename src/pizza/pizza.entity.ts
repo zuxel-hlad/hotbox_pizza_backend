@@ -28,6 +28,6 @@ export class PizzaEntity {
   @Column({ default: 0 })
   favoritesCount: number;
 
-  @ManyToOne(() => UserEntity, (user) => user.favoritePizza, { onDelete: 'CASCADE' })
+  @ManyToOne(() => UserEntity, (user) => user.favoritePizza, { onDelete: 'CASCADE', onUpdate: 'NO ACTION' })
   favoritedBy: UserEntity[];
 }

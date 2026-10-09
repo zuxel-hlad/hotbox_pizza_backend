@@ -13,10 +13,12 @@
     "target": "ES2023",
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
+    "rootDir": "./",
+    "types": ["node", "jest"],
     "incremental": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
+    "strict": false,
     "paths": {
       "@app/*": ["./src/*"]
     }
