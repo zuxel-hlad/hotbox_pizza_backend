@@ -12,7 +12,7 @@ import { DataSource } from 'typeorm';
 
 export interface TestApp {
   app: INestApplication<App>;
-  mailService: { sendMail: jest.Mock };
+  mailService: { sendResetCode: jest.Mock };
   repository: (entity: new () => object) => RepositoryMock;
   resetMocks: () => void;
 }
@@ -26,9 +26,9 @@ export const createTestApp = async (): Promise<TestApp> => {
 
     return repositories.get(entity);
   };
-  const mailService = { sendMail: jest.fn() };
+  const mailService = { sendResetCode: jest.fn() };
   const resetMocks = () => {
-    mailService.sendMail.mockReset();
+    mailService.sendResetCode.mockReset();
 
     for (const repositoryMock of repositories.values()) {
       Object.assign(repositoryMock, createRepositoryMock());

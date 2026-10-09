@@ -125,7 +125,7 @@ describe('Auth (e2e)', () => {
         .post('/auth/password/reset/send-otp')
         .send({ email: user.email })
         .expect(201);
-      const [, , code] = testApp.mailService.sendMail.mock.calls[0] as [string, string, string];
+      const [, code] = testApp.mailService.sendResetCode.mock.calls[0] as [string, string];
 
       expect(sendResponse.body).toEqual({ message: 'Reset password code sent to jo*n@x.com', statusCode: 200 });
 
@@ -141,7 +141,7 @@ describe('Auth (e2e)', () => {
       userRepository.findOne.mockResolvedValue(null);
 
       await request(server).post('/auth/password/reset/send-otp').send({ email: 'nobody@x.com' }).expect(422);
-      expect(testApp.mailService.sendMail).not.toHaveBeenCalled();
+      expect(testApp.mailService.sendResetCode).not.toHaveBeenCalled();
     });
 
     it('rejects a wrong code', async () => {

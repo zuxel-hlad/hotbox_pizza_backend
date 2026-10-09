@@ -2,20 +2,19 @@ import { OrderPizzaDto } from '@modules/order/dto/order-pizza.dto';
 import { OrderStatus, PaymentType } from '@modules/order/order.constants';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsEnum, IsOptional, IsPhoneNumber, IsString, ValidateNested } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsEnum, IsOptional, IsPhoneNumber, IsString, ValidateNested } from 'class-validator';
 
 export class OrderDto {
   @IsEnum(OrderStatus)
-  @ApiProperty({ example: OrderStatus.PENDING })
+  @ApiProperty({ enum: OrderStatus, example: OrderStatus.PENDING })
   readonly status: OrderStatus;
 
   @IsEnum(PaymentType)
-  @ApiProperty({
-    example: `${PaymentType.CASH_PAYMENT} / ${PaymentType.BONUS_PAYMENT} / ${PaymentType.ONLINE_PAYMENT}`,
-  })
+  @ApiProperty({ enum: PaymentType })
   readonly paymentType: PaymentType;
 
   @IsArray()
+  @ArrayNotEmpty()
   @ValidateNested({ each: true })
   @Type(() => OrderPizzaDto)
   @ApiProperty({ type: [OrderPizzaDto] })

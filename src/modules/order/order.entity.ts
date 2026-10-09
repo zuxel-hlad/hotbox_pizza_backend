@@ -1,7 +1,7 @@
 import { OrderPizzaDto } from '@modules/order/dto/order-pizza.dto';
 import { OrderStatus, PaymentType } from '@modules/order/order.constants';
 import { UserEntity } from '@modules/user/user.entity';
-import { BeforeUpdate, Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('order_list')
 export class OrderEntity {
@@ -26,16 +26,14 @@ export class OrderEntity {
   @Column()
   comment: string;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({ type: 'int', default: 0 })
+  price: number;
+
+  @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
-
-  @BeforeUpdate()
-  updateTimestamp() {
-    this.updatedAt = new Date();
-  }
 
   @ManyToOne(() => UserEntity, (user) => user.orders, { nullable: true, onDelete: 'SET NULL' })
   user: UserEntity | null;

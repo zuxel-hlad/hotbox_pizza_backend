@@ -1,18 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsNumber } from 'class-validator';
+import { ArrayUnique, IsArray, IsBoolean, IsInt, Min } from 'class-validator';
 
 export class OrderPizzaDto {
-  @IsNumber()
+  @IsInt()
   @ApiProperty()
   readonly pizzaId: number;
 
-  @IsNumber()
-  @ApiProperty()
+  @IsInt()
+  @Min(1)
+  @ApiProperty({ minimum: 1 })
   readonly count: number;
 
   @IsArray()
-  @IsNumber({}, { each: true })
+  @ArrayUnique()
+  @IsInt({ each: true })
   @Type(() => Number)
   @ApiProperty({ type: [Number] })
   readonly extraIngredientsIds: number[];
