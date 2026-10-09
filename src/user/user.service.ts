@@ -35,7 +35,17 @@ export class UserService {
   async findCurrentUser(user: Partial<UserEntity>): Promise<UserEntity> {
     return await this.userRepository.findOne({
       where: { id: user.id, email: user.email, username: user.username, tokenVersion: user.tokenVersion },
-      select: ['birthDate', 'bonuses', 'email', 'id', 'image', 'password', 'phone', 'username', 'tokenVersion'],
+      select: {
+        birthDate: true,
+        bonuses: true,
+        email: true,
+        id: true,
+        image: true,
+        password: true,
+        phone: true,
+        username: true,
+        tokenVersion: true,
+      },
     });
   }
 
