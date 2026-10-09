@@ -23,7 +23,7 @@ export class PizzaService {
     let favoriteIds: number[] = [];
 
     if (userId) {
-      const user = await this.userRepository.findOne({ where: { id: userId }, relations: ['favoritePizza'] });
+      const user = await this.userRepository.findOne({ where: { id: userId }, relations: { favoritePizza: true } });
       favoriteIds = user.favoritePizza.map((pizza) => pizza.id);
     }
 
@@ -46,7 +46,7 @@ export class PizzaService {
   }
 
   async getFavoritePizza(id: number): Promise<PizzaResponse[]> {
-    const user = await this.userRepository.findOne({ where: { id }, relations: ['favoritePizza'] });
+    const user = await this.userRepository.findOne({ where: { id }, relations: { favoritePizza: true } });
 
     if (!user) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
@@ -85,7 +85,7 @@ export class PizzaService {
   }
 
   async toggleFavorite(userId: number, pizzaId: number): Promise<PizzaEntity> {
-    const user = await this.userRepository.findOne({ where: { id: userId }, relations: ['favoritePizza'] });
+    const user = await this.userRepository.findOne({ where: { id: userId }, relations: { favoritePizza: true } });
 
     const pizza = await this.pizzaRepository.findOne({ where: { id: pizzaId } });
     if (!pizza) throw new HttpException('Pizza not found', HttpStatus.NOT_FOUND);
