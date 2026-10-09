@@ -12,7 +12,7 @@ export class UserService {
   async updateLoggedUser(userId: number, updateUserDto: UpdateUserDto): Promise<UserEntity> {
     const user = await this.findCurrentUser({ id: userId });
 
-    if (updateUserDto.email !== user.email) {
+    if (updateUserDto.email && updateUserDto.email !== user.email) {
       const isEmailExist = await this.findCurrentUser({ email: updateUserDto.email });
 
       if (isEmailExist) {
@@ -20,8 +20,8 @@ export class UserService {
       }
     }
 
-    if (updateUserDto.username !== user.username) {
-      const isUserNameExist = await this.findCurrentUser({ email: updateUserDto.username });
+    if (updateUserDto.username && updateUserDto.username !== user.username) {
+      const isUserNameExist = await this.findCurrentUser({ username: updateUserDto.username });
 
       if (isUserNameExist) {
         throw new HttpException('Username has been taken', HttpStatus.UNPROCESSABLE_ENTITY);

@@ -31,5 +31,12 @@ describe('TokenService', () => {
     await expect(tokenService.renewToken(token)).rejects.toMatchObject({ message, status: HttpStatus.UNAUTHORIZED });
   });
 
-  it.todo('responds 404 for an unknown user (NotFoundException is swallowed into 401)');
+  it('rejects an unknown user', async () => {
+    userRepository.findOne.mockResolvedValue(null);
+
+    await expect(tokenService.renewToken(sign({ id: 7 }, REFRESH_TOKEN_SECRET))).rejects.toMatchObject({
+      message: 'User not found',
+      status: HttpStatus.NOT_FOUND,
+    });
+  });
 });

@@ -44,7 +44,26 @@ describe('UserService', () => {
       expect(userRepository.save).toHaveBeenCalledWith(user);
     });
 
-    it.todo('rejects a username taken by another user (lookup uses email instead of username)');
+    it('rejects a username taken by another user', async () => {
+      userRepository.findOne.mockResolvedValueOnce(createUser()).mockResolvedValueOnce({ id: 2 });
+
+      await expect(
+        userService.updateLoggedUser(1, { email: 'john@x.com', username: 'taken' } as never),
+      ).rejects.toMatchObject({ message: 'Username has been taken', status: HttpStatus.UNPROCESSABLE_ENTITY });
+      expect(userRepository.findOne).toHaveBeenLastCalledWith(
+        expect.objectContaining({ where: expect.objectContaining({ username: 'taken' }) as object }),
+      );
+    });
+
+    it('skips uniqueness checks for omitted email and username', async () => {
+      userRepository.findOne.mockResolvedValueOnce(createUser()).mockResolvedValueOnce({ id: 2 });
+
+      await expect(userService.updateLoggedUser(1, { phone: '+380501234567' } as never)).resolves.toMatchObject({
+        email: 'john@x.com',
+        phone: '+380501234567',
+      });
+      expect(userRepository.findOne).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('finds the current user with the password selected', async () => {
