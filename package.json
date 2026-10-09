@@ -14,7 +14,7 @@
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
     "test:cov": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
     "test:debug": "node --experimental-vm-modules --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/jest/bin/jest.js --runInBand",
-    "test:e2e": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config ./test/jest-e2e.json",
+    "test:e2e": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testRegex \".*\\\\.e2e-spec\\\\.ts$\"",
     "psql": "/Library/PostgreSQL/17/bin/psql -U postgres",
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d src/core/database/data-source.ts",
     "db:drop": "npm run typeorm schema:drop",
@@ -85,21 +85,22 @@
       "json",
       "ts"
     ],
-    "rootDir": "src",
+    "rootDir": ".",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "src/**/*.(t|j)s"
     ],
-    "coverageDirectory": "../coverage",
+    "coverageDirectory": "coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/$1",
-"^@common/(.*)$": "<rootDir>/common/$1",
-"^@core/(.*)$": "<rootDir>/core/$1",
-"^@modules/(.*)$": "<rootDir>/modules/$1"
+      "^@/(.*)$": "<rootDir>/src/$1",
+      "^@common/(.*)$": "<rootDir>/src/common/$1",
+      "^@core/(.*)$": "<rootDir>/src/core/$1",
+      "^@modules/(.*)$": "<rootDir>/src/modules/$1",
+      "^@test/(.*)$": "<rootDir>/test/$1"
     }
   },
   "pnpm": {
