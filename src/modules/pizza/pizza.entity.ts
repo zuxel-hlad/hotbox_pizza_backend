@@ -10,10 +10,10 @@ export class PizzaEntity {
   @Column({ default: '' })
   imgUrl: string;
 
-  @Column()
+  @Column({ collation: 'und-x-icu' })
   nameEn: string;
 
-  @Column()
+  @Column({ collation: 'und-x-icu' })
   nameUa: string;
 
   @Column('simple-json')
