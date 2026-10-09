@@ -1,5 +1,5 @@
-import { AppModule } from '@app/app/app.module';
-import { HttpExceptionFilter } from '@app/common/http.exception.filter';
+import { AppModule } from '@/app.module';
+import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import 'reflect-metadata';
@@ -25,4 +25,4 @@ const bootstrap = async (): Promise<void> => {
 
   await app.listen(3000);
 };
-bootstrap();
+void bootstrap();
