@@ -33,6 +33,17 @@ describe('Token (e2e)', () => {
     expect(response.body).toEqual({ token: expect.any(String) as string, expiresIn: 3600 });
   });
 
+  it('responds 404 for an unknown user', async () => {
+    testApp.repository(UserEntity).findOne.mockResolvedValue(null);
+
+    const response = await request(server)
+      .post('/token/renew')
+      .send({ token: sign({ id: 1 }, REFRESH_TOKEN_SECRET) })
+      .expect(404);
+
+    expect(response.body).toMatchObject({ message: 'User not found' });
+  });
+
   it('rejects a token signed with another secret', async () => {
     const response = await request(server)
       .post('/token/renew')

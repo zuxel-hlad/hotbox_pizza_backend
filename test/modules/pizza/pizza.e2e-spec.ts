@@ -70,6 +70,19 @@ describe('Pizza (e2e)', () => {
       expect(response.body).toMatchObject({ content: [{ id: 1, isFavorited: true }] });
     });
 
+    it('marks nothing for an outdated token', async () => {
+      pizzaRepository.createQueryBuilder.mockReturnValue(createQueryBuilderMock([pizza]));
+      userRepository.findOne.mockResolvedValue(null);
+
+      const response = await request(server)
+        .get('/pizza')
+        .set('Authorization', authHeader)
+        .query({ page: 1, pageSize: 10 })
+        .expect(200);
+
+      expect(response.body).toMatchObject({ content: [{ id: 1, isFavorited: false }] });
+    });
+
     it.each([
       [{ page: 0, pageSize: 10 }, 'The page value must be at least 1.'],
       [{ page: 1, pageSize: 10, price: 'UP' }, 'price must be one of the following values: ASC, DESC'],
@@ -172,6 +185,13 @@ describe('Pizza (e2e)', () => {
   describe('PUT /pizza/toggle/favorite/:id', () => {
     it('requires authorization', async () => {
       await request(server).put('/pizza/toggle/favorite/1').expect(401);
+    });
+
+    it('rejects an outdated token', async () => {
+      userRepository.findOne.mockResolvedValue(null);
+
+      await request(server).put('/pizza/toggle/favorite/1').set('Authorization', authHeader).expect(401);
+      expect(pizzaRepository.save).not.toHaveBeenCalled();
     });
 
     it('adds a pizza to favorites', async () => {

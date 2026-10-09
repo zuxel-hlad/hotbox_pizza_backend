@@ -58,7 +58,13 @@ describe('PizzaService', () => {
       expect(content.every((pizza) => !pizza.isFavorited)).toBe(true);
     });
 
-    it.todo('handles a token user that no longer exists (crashes on user.favoritePizza)');
+    it('marks nothing for a user that no longer exists', async () => {
+      userRepository.findOne.mockResolvedValue(null);
+
+      const { content } = await pizzaService.findAll(1, query);
+
+      expect(content.every((pizza) => !pizza.isFavorited)).toBe(true);
+    });
   });
 
   it('rejects an unknown pizza', async () => {
@@ -120,6 +126,16 @@ describe('PizzaService', () => {
   });
 
   describe('toggleFavorite', () => {
+    it('rejects a user that no longer exists', async () => {
+      userRepository.findOne.mockResolvedValue(null);
+
+      await expect(pizzaService.toggleFavorite(1, 1)).rejects.toMatchObject({
+        message: 'Unauthorized',
+        status: HttpStatus.UNAUTHORIZED,
+      });
+      expect(pizzaRepository.save).not.toHaveBeenCalled();
+    });
+
     it('rejects an unknown pizza', async () => {
       userRepository.findOne.mockResolvedValue({ favoritePizza: [] });
       pizzaRepository.findOne.mockResolvedValue(null);
