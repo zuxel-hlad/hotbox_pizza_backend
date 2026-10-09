@@ -3,8 +3,7 @@ import { UpdateExtraIngredientRequestDto } from '@modules/extra-ingredient/dto/u
 import { ExtraIngredientEntity } from '@modules/extra-ingredient/extra-ingredient.entity';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { DeleteResult } from 'typeorm/browser';
+import { DeleteResult, Repository } from 'typeorm';
 
 @Injectable()
 export class ExtraIngredientService {
@@ -14,16 +13,14 @@ export class ExtraIngredientService {
   ) {}
 
   async create(ingredientDto: CreateExtraIngredientRequestDto): Promise<ExtraIngredientEntity> {
-    const isIngredientExist = await this.extraIngredientRepository.findOne({
-      where: { nameEn: ingredientDto.nameEn, nameUa: ingredientDto.nameUa },
-    });
+    const { nameEn, nameUa } = ingredientDto;
+    const isIngredientExist = await this.extraIngredientRepository.existsBy({ nameEn, nameUa });
 
     if (isIngredientExist) {
       throw new HttpException('Extra ingredient already exist.', HttpStatus.BAD_REQUEST);
     }
 
-    const newExtraIngredient = Object.assign(new ExtraIngredientEntity(), ingredientDto);
-    return await this.extraIngredientRepository.save(newExtraIngredient);
+    return await this.extraIngredientRepository.save(Object.assign(new ExtraIngredientEntity(), ingredientDto));
   }
 
   async update(ingredientDto: UpdateExtraIngredientRequestDto, ingredientId: number): Promise<ExtraIngredientEntity> {
@@ -33,18 +30,17 @@ export class ExtraIngredientService {
       throw new HttpException('Ingredient not found', HttpStatus.NOT_FOUND);
     }
 
-    const updatedIngredient = Object.assign(ingredient, ingredientDto);
-    return await this.extraIngredientRepository.save(updatedIngredient);
+    return await this.extraIngredientRepository.save(Object.assign(ingredient, ingredientDto));
   }
 
   async delete(ingredientId: number): Promise<DeleteResult> {
-    const ingredient = await this.extraIngredientRepository.findOne({ where: { id: ingredientId } });
+    const deleteResult = await this.extraIngredientRepository.delete(ingredientId);
 
-    if (!ingredient) {
+    if (!deleteResult.affected) {
       throw new HttpException('Ingredient not found', HttpStatus.NOT_FOUND);
     }
 
-    return await this.extraIngredientRepository.delete(ingredient);
+    return deleteResult;
   }
 
   async findAll(): Promise<ExtraIngredientEntity[]> {

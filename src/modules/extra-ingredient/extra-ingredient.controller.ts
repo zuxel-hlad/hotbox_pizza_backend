@@ -4,13 +4,11 @@ import {
   CreateExtraIngredientRequestDto,
   CreateExtraIngredientResponseDto,
 } from '@modules/extra-ingredient/dto/create-extra-ingredient.dto';
-import {
-  UpdateExtraIngredientRequestDto,
-  UpdateExtraIngredientResponseDto,
-} from '@modules/extra-ingredient/dto/update-extra-ingredient.dto';
+import { UpdateExtraIngredientRequestDto } from '@modules/extra-ingredient/dto/update-extra-ingredient.dto';
 import { ExtraIngredientEntity } from '@modules/extra-ingredient/extra-ingredient.entity';
 import { ExtraIngredientService } from '@modules/extra-ingredient/extra-ingredient.service';
 import {
+  applyDecorators,
   Body,
   Controller,
   Delete,
@@ -24,8 +22,20 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { DeleteResult } from 'typeorm';
+
+const ApiIngredientErrors = () =>
+  applyDecorators(
+    ApiResponse({
+      status: HttpStatus.NOT_FOUND,
+      example: { statusCode: HttpStatus.NOT_FOUND, message: 'Ingredient not found' },
+    }),
+    ApiResponse({
+      status: HttpStatus.UNAUTHORIZED,
+      example: { statusCode: HttpStatus.UNAUTHORIZED, message: 'Not authorized' },
+    }),
+  );
 
 @ApiTags('Extra Ingredients Resource')
 @Controller('extra-ingredient')
@@ -35,7 +45,6 @@ export class ExtraIngredientController {
   @Post('create')
   @UsePipes(new ValidationPipe(validationsSettings))
   @ApiSecurity('Token')
-  @ApiBody({ type: CreateExtraIngredientRequestDto })
   @ApiResponse({ status: HttpStatus.OK, type: CreateExtraIngredientResponseDto })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, schema: { example: { message: 'Extra ingredient already exist.' } } })
   @ApiOperation({ summary: 'Create new ingredient' })
@@ -45,16 +54,8 @@ export class ExtraIngredientController {
 
   @Put('update/:id')
   @ApiSecurity('Token')
-  @ApiBody({ type: UpdateExtraIngredientRequestDto })
-  @ApiResponse({ status: HttpStatus.CREATED, type: UpdateExtraIngredientResponseDto })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    example: { statusCode: HttpStatus.NOT_FOUND, message: 'Ingredient not found' },
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    example: { statusCode: HttpStatus.NOT_FOUND, message: 'Not authorized' },
-  })
+  @ApiResponse({ status: HttpStatus.CREATED, type: CreateExtraIngredientResponseDto })
+  @ApiIngredientErrors()
   @ApiOperation({ summary: 'Update extra ingredient' })
   @UseGuards(AuthGuard)
   @UsePipes(new ValidationPipe(validationsSettings))
@@ -68,17 +69,9 @@ export class ExtraIngredientController {
   @Delete('delete/:id')
   @ApiSecurity('Token')
   @ApiResponse({ status: HttpStatus.NO_CONTENT })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    example: { statusCode: HttpStatus.NOT_FOUND, message: 'Ingredient not found' },
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    example: { statusCode: HttpStatus.NOT_FOUND, message: 'Not authorized' },
-  })
+  @ApiIngredientErrors()
   @ApiOperation({ summary: 'Delete extra ingredient' })
   @UseGuards(AuthGuard)
-  @UsePipes(new ValidationPipe(validationsSettings))
   async delete(@Param('id', ParseIntPipe) ingredientId: number): Promise<DeleteResult> {
     return await this.extraIngredientService.delete(ingredientId);
   }

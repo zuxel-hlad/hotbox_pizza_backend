@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNumber, IsString } from 'class-validator';
 
-export class ExtraIngredientDto {
+export class CreateExtraIngredientRequestDto {
   @ApiProperty()
   @IsString()
   readonly nameEn: string;
@@ -19,9 +19,7 @@ export class ExtraIngredientDto {
   readonly price: number;
 }
 
-export class CreateExtraIngredientRequestDto extends ExtraIngredientDto {}
-
-export class CreateExtraIngredientResponseDto extends ExtraIngredientDto {
+export class CreateExtraIngredientResponseDto extends CreateExtraIngredientRequestDto {
   @ApiProperty()
   readonly id: number;
 }
