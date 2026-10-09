@@ -1,0 +1,60 @@
+import { validationsSettings } from '@common/constants/validation.constants';
+import { User } from '@common/decorators/user.decorator';
+import { AuthGuard } from '@core/guards/auth.guard';
+import { AuthService } from '@modules/auth/auth.service';
+import type { AuthResponse } from '@modules/auth/types/auth-response.interface';
+import { TokenResponseDto } from '@modules/token/dto/token-response.dto';
+import { UpdateUserDto, UpdateUserDtoRequest } from '@modules/user/dto/update-user.dto';
+import { UserResponseDto } from '@modules/user/dto/user-response.dto';
+import type { UserResponse } from '@modules/user/types/user-response.interface';
+import { UserEntity } from '@modules/user/user.entity';
+import { UserService } from '@modules/user/user.service';
+import { Body, Controller, Get, HttpStatus, Put, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
+import { ApiBody, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
+
+@ApiTags('User Resource')
+@ApiSecurity('Token')
+@Controller('user')
+export class UserController {
+  constructor(
+    private readonly userService: UserService,
+    private readonly authService: AuthService,
+  ) {}
+
+  @Get('me')
+  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Get logged user' })
+  @ApiResponse({ status: HttpStatus.OK, type: UserResponseDto })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Not authorized' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Not found' })
+  getLoggedUser(@User() user: UserEntity): UserResponse {
+    return this.userService.buildUserResponse(user);
+  }
+
+  @Put('update')
+  @UseGuards(AuthGuard)
+  @UsePipes(new ValidationPipe(validationsSettings))
+  @ApiOperation({ summary: 'Update logged user' })
+  @ApiResponse({ status: HttpStatus.OK, type: TokenResponseDto })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Not authorized' })
+  @ApiResponse({
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    description: 'Validation errors',
+    schema: {
+      example: {
+        statusCode: 422,
+        message: ['Email has been taken', 'Username has been taken'],
+        error: 'Unprocessable Entity',
+      },
+    },
+  })
+  @ApiBody({ type: UpdateUserDtoRequest })
+  async updateLoggedUser(
+    @User('id') userId: number,
+    @Body('user') updateUserDto: UpdateUserDto,
+  ): Promise<AuthResponse> {
+    const updatedUser = await this.userService.updateLoggedUser(userId, updateUserDto);
+
+    return this.authService.buildAuthResponse(updatedUser);
+  }
+}

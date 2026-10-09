@@ -1,0 +1,5 @@
+import { UserEntity } from '@modules/user/user.entity';
+
+export interface UserResponse {
+  user: Omit<UserEntity, 'hashPassword' | 'password'>;
+}

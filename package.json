@@ -16,7 +16,7 @@
     "test:debug": "node --experimental-vm-modules --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/jest/bin/jest.js --runInBand",
     "test:e2e": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config ./test/jest-e2e.json",
     "psql": "/Library/PostgreSQL/17/bin/psql -U postgres",
-    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d src/orm/orm.data.source.ts",
+    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d src/core/database/data-source.ts",
     "db:drop": "npm run typeorm schema:drop",
     "db:create": "npm run typeorm migration:generate",
     "db:migrate": "npm run typeorm migration:run",
@@ -96,7 +96,10 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "^@app/(.*)$": "<rootDir>/$1"
+      "^@/(.*)$": "<rootDir>/$1",
+"^@common/(.*)$": "<rootDir>/common/$1",
+"^@core/(.*)$": "<rootDir>/core/$1",
+"^@modules/(.*)$": "<rootDir>/modules/$1"
     }
   },
   "pnpm": {
