@@ -82,7 +82,7 @@ export class AuthService {
     await this.findByEmailOrFail(email);
 
     this.otpCode = generateOTP();
-    await this.mailService.sendMail(email, 'Password reset code', this.otpCode);
+    await this.mailService.sendResetCode(email, this.otpCode);
 
     return { message: `Reset password code sent to ${maskEmail(email)}`, statusCode: HttpStatus.OK };
   }
