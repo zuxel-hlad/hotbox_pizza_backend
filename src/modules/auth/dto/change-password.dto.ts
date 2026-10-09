@@ -1,4 +1,3 @@
-import { TokenResponseDto } from '@modules/token/dto/token-response.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, MinLength } from 'class-validator';
 
@@ -20,5 +19,3 @@ export class ChangePasswordRequestDto {
   @ApiProperty()
   password: ChangePasswordDto;
 }
-
-export class ChangePasswordResponseDto extends TokenResponseDto {}

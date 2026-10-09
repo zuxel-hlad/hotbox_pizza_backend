@@ -21,8 +21,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     ExtraIngredientModule,
     OrderModule,
   ],
-  controllers: [],
-  providers: [],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {

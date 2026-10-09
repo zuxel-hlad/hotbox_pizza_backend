@@ -1,4 +1,3 @@
-import { TokenResponseDto } from '@modules/token/dto/token-response.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
@@ -19,6 +18,3 @@ export class VerifyResetPasswordDto {
   @IsString()
   readonly password: string;
 }
-
-export class VerifyResetPasswordRequestDto extends VerifyResetPasswordDto {}
-export class VerifyResetPasswordResponseDto extends TokenResponseDto {}
