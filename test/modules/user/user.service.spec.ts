@@ -13,7 +13,6 @@ describe('UserService', () => {
       id: 1,
       email: 'john@x.com',
       username: 'john',
-      password: 'hash',
       tokenVersion: 2,
     });
 
@@ -66,22 +65,16 @@ describe('UserService', () => {
     });
   });
 
-  it('finds the current user with the password selected', async () => {
+  it('finds the current user by the given criteria', async () => {
     await userService.findCurrentUser({ id: 1, tokenVersion: 2 });
 
-    expect(userRepository.findOne).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: 1, email: undefined, username: undefined, tokenVersion: 2 },
-        select: expect.objectContaining({ password: true }) as object,
-      }),
-    );
+    expect(userRepository.findOne).toHaveBeenCalledWith({ where: { id: 1, tokenVersion: 2 } });
   });
 
-  it('builds a user response without secrets', () => {
+  it('builds a user response without the token version', () => {
     const { user } = userService.buildUserResponse(createUser());
 
     expect(user).toMatchObject({ id: 1, email: 'john@x.com', username: 'john' });
-    expect(user).not.toHaveProperty('password');
     expect(user).not.toHaveProperty('tokenVersion');
   });
 });

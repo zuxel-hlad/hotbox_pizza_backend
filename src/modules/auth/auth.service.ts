@@ -16,7 +16,7 @@ import { ResetPasswordCodeResponse } from '@modules/auth/types/reset-password-co
 import { MailService } from '@modules/mail/mail.service';
 import { Token } from '@modules/token/types/token.interface';
 import { UserEntity } from '@modules/user/user.entity';
-import { HttpException, HttpStatus, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { compare, hash } from 'bcrypt';
 import { sign, TokenExpiredError, verify } from 'jsonwebtoken';
@@ -107,19 +107,20 @@ export class AuthService {
 
   async renewAccessToken(refreshToken: string): Promise<Token> {
     let userId: number;
+    let tokenVersion: number;
 
     try {
-      ({ id: userId } = verify(refreshToken, REFRESH_TOKEN_SECRET) as UserEntity);
+      ({ id: userId, tokenVersion } = verify(refreshToken, REFRESH_TOKEN_SECRET) as UserEntity);
     } catch (error) {
       throw new UnauthorizedException(
         error instanceof TokenExpiredError ? 'Refresh token expired' : 'Invalid refresh token',
       );
     }
 
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const user = await this.userRepository.findOne({ where: { id: userId, tokenVersion } });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new UnauthorizedException('Invalid refresh token');
     }
 
     return this.buildToken(user, ACCESS_TOKEN_SECRET, ACCESS_TOKEN_TTL);

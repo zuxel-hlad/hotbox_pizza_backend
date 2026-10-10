@@ -3,7 +3,7 @@ import type { UserResponse } from '@modules/user/types/user-response.interface';
 import { UserEntity } from '@modules/user/user.entity';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 
 @Injectable()
 export class UserService {
@@ -32,26 +32,11 @@ export class UserService {
     return await this.userRepository.save(user);
   }
 
-  async findCurrentUser(user: Partial<UserEntity>): Promise<UserEntity> {
-    return await this.userRepository.findOne({
-      where: { id: user.id, email: user.email, username: user.username, tokenVersion: user.tokenVersion },
-      select: {
-        birthDate: true,
-        bonuses: true,
-        email: true,
-        id: true,
-        image: true,
-        password: true,
-        phone: true,
-        username: true,
-        tokenVersion: true,
-      },
-    });
+  findCurrentUser(where: FindOptionsWhere<UserEntity>): Promise<UserEntity> {
+    return this.userRepository.findOne({ where });
   }
 
   buildUserResponse(user: UserEntity): UserResponse {
-    delete user.hashPassword;
-    delete user.password;
     delete user.tokenVersion;
 
     return { user };
