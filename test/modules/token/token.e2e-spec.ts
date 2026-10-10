@@ -27,21 +27,22 @@ describe('Token (e2e)', () => {
 
     const response = await request(server)
       .post('/token/renew')
-      .send({ token: sign({ id: 1 }, REFRESH_TOKEN_SECRET) })
+      .send({ token: sign({ id: 1, tokenVersion: 0 }, REFRESH_TOKEN_SECRET) })
       .expect(201);
 
     expect(response.body).toEqual({ token: expect.any(String) as string, expiresIn: 3600 });
+    expect(testApp.repository(UserEntity).findOne).toHaveBeenCalledWith({ where: { id: 1, tokenVersion: 0 } });
   });
 
-  it('responds 404 for an unknown user', async () => {
+  it('rejects a revoked token or an unknown user', async () => {
     testApp.repository(UserEntity).findOne.mockResolvedValue(null);
 
     const response = await request(server)
       .post('/token/renew')
-      .send({ token: sign({ id: 1 }, REFRESH_TOKEN_SECRET) })
-      .expect(404);
+      .send({ token: sign({ id: 1, tokenVersion: 0 }, REFRESH_TOKEN_SECRET) })
+      .expect(401);
 
-    expect(response.body).toMatchObject({ message: 'User not found' });
+    expect(response.body).toMatchObject({ message: 'Invalid refresh token' });
   });
 
   it('rejects a token signed with another secret', async () => {
