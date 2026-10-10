@@ -7,6 +7,7 @@ export const createRepositoryMock = () => ({
   save: jest.fn(<T>(entity: T) => Promise.resolve(entity)),
   delete: jest.fn(),
   createQueryBuilder: jest.fn(),
+  manager: { transaction: jest.fn() },
 });
 
 export type RepositoryMock = ReturnType<typeof createRepositoryMock>;

@@ -26,16 +26,16 @@ export class PizzaFiltersService {
       baseQuery.andWhere('pizza.price BETWEEN :priceMin AND :priceMax', { priceMin, priceMax });
     }
 
-    if (price && SortEnum[price]) {
-      filterOptions['pizza.price'] = SortEnum[price];
+    if (price) {
+      filterOptions['pizza.price'] = price;
     }
 
-    if (calories && SortEnum[calories]) {
-      filterOptions['pizza.calories'] = SortEnum[calories];
+    if (calories) {
+      filterOptions['pizza.calories'] = calories;
     }
 
-    if (favoritesCount && SortEnum[favoritesCount]) {
-      filterOptions['pizza.favoritesCount'] = SortEnum[favoritesCount];
+    if (favoritesCount) {
+      filterOptions['pizza.favoritesCount'] = favoritesCount;
     }
 
     const pizzasCount = await baseQuery.getCount();

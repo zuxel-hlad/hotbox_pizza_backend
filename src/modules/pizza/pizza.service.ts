@@ -8,8 +8,8 @@ import { PizzaResponse } from '@modules/pizza/types/pizza-response.interface';
 import { UserEntity } from '@modules/user/user.entity';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { DeleteResult } from 'typeorm/browser';
+import { randomInt } from 'node:crypto';
+import { DeleteResult, Repository } from 'typeorm';
 
 @Injectable()
 export class PizzaService {
@@ -54,86 +54,67 @@ export class PizzaService {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
 
-    const pizzaResponse = user.favoritePizza.map((pizza) => ({ ...pizza, isFavorited: true }));
-
-    return pizzaResponse;
+    return user.favoritePizza.map((pizza) => ({ ...pizza, isFavorited: true }));
   }
 
   async create(createPizzaDto: CreatePizzaDtoRequest): Promise<PizzaEntity> {
-    const { nameEn, nameUa } = createPizzaDto;
-    const isPizzaExist = await this.pizzaRepository.findOne({ where: { nameEn, nameUa } });
+    const { nameEn, nameUa, ingredients } = createPizzaDto;
+    const isPizzaExist = await this.pizzaRepository.existsBy({ nameEn, nameUa });
 
     if (isPizzaExist) {
       throw new HttpException(`Pizza with "${nameEn}" and "${nameUa}" already exist.`, HttpStatus.CONFLICT);
     }
 
-    const pizza = Object.assign(new PizzaEntity(), createPizzaDto);
-
-    pizza.ingredients = pizza.ingredients.map((ingredient) => ({ ...ingredient, id: this.generateId() }));
+    const pizza = Object.assign(new PizzaEntity(), {
+      ...createPizzaDto,
+      ingredients: ingredients.map((ingredient) => ({ ...ingredient, id: randomInt(1, 1_000_000_000) })),
+    });
 
     return await this.pizzaRepository.save(pizza);
   }
 
   async update(updateDto: UpdatePizzaDtoRequest, id: number): Promise<PizzaEntity> {
-    const pizza = await this.pizzaRepository.findOne({ where: { id } });
+    const pizza = await this.getSinglePizza(id);
 
-    if (!pizza) {
-      throw new HttpException('Not found', HttpStatus.NOT_FOUND);
-    }
-
-    const updatedPizza = Object.assign(pizza, updateDto);
-
-    return await this.pizzaRepository.save(updatedPizza);
+    return await this.pizzaRepository.save(Object.assign(pizza, updateDto));
   }
 
   async toggleFavorite(userId: number, pizzaId: number): Promise<PizzaEntity> {
-    const user = await this.userRepository.findOne({ where: { id: userId }, relations: { favoritePizza: true } });
+    return await this.pizzaRepository.manager.transaction(async (manager) => {
+      const isUserExist = await manager.existsBy(UserEntity, { id: userId });
 
-    if (!user) {
-      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
-    }
+      if (!isUserExist) {
+        throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      }
 
-    const pizza = await this.pizzaRepository.findOne({ where: { id: pizzaId } });
-    if (!pizza) throw new HttpException('Pizza not found', HttpStatus.NOT_FOUND);
+      const pizza = await manager.findOne(PizzaEntity, { where: { id: pizzaId }, lock: { mode: 'pessimistic_write' } });
 
-    const isFavorited = user.favoritePizza.some((p) => p.id === pizza.id);
+      if (!pizza) {
+        throw new HttpException('Not found', HttpStatus.NOT_FOUND);
+      }
 
-    if (!isFavorited) {
-      user.favoritePizza.push(pizza);
-      pizza.favoritesCount += 1;
+      const isFavorited = await manager.exists(UserEntity, { where: { id: userId, favoritePizza: { id: pizzaId } } });
+      const favoritePizza = manager.createQueryBuilder().relation(UserEntity, 'favoritePizza').of(userId);
 
-      await this.userRepository.save(user);
-      await this.pizzaRepository.save(pizza);
+      if (isFavorited) {
+        await favoritePizza.remove(pizzaId);
+      } else {
+        await favoritePizza.add(pizzaId);
+      }
 
-      return pizza;
-    }
+      pizza.favoritesCount += isFavorited ? -1 : 1;
 
-    if (isFavorited) {
-      user.favoritePizza = user.favoritePizza.filter((favoritePizza) => favoritePizza.id !== pizza.id);
-
-      pizza.favoritesCount -= 1;
-
-      await this.userRepository.save(user);
-      await this.pizzaRepository.save(pizza);
-
-      return pizza;
-    }
+      return await manager.save(pizza);
+    });
   }
 
   async deleteSinglePizza(id: number): Promise<DeleteResult> {
-    const pizza = await this.pizzaRepository.findOne({ where: { id } });
+    const deleteResult = await this.pizzaRepository.delete(id);
 
-    if (!pizza) {
+    if (!deleteResult.affected) {
       throw new HttpException('Not found', HttpStatus.NOT_FOUND);
     }
 
-    return await this.pizzaRepository.delete({ id: pizza.id });
-  }
-
-  generateId(): number {
-    const min = 1;
-    const max = 1_000_000_000;
-
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+    return deleteResult;
   }
 }
