@@ -16,10 +16,10 @@ import { ResetPasswordCodeResponse } from '@modules/auth/types/reset-password-co
 import { MailService } from '@modules/mail/mail.service';
 import { Token } from '@modules/token/types/token.interface';
 import { UserEntity } from '@modules/user/user.entity';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { compare, hash } from 'bcrypt';
-import { sign } from 'jsonwebtoken';
+import { sign, TokenExpiredError, verify } from 'jsonwebtoken';
 import { FindOptionsWhere, Repository } from 'typeorm';
 
 @Injectable()
@@ -103,6 +103,26 @@ export class AuthService {
       access: this.buildToken(user, ACCESS_TOKEN_SECRET, ACCESS_TOKEN_TTL),
       refresh: this.buildToken(user, REFRESH_TOKEN_SECRET, REFRESH_TOKEN_TTL),
     };
+  }
+
+  async renewAccessToken(refreshToken: string): Promise<Token> {
+    let userId: number;
+
+    try {
+      ({ id: userId } = verify(refreshToken, REFRESH_TOKEN_SECRET) as UserEntity);
+    } catch (error) {
+      throw new UnauthorizedException(
+        error instanceof TokenExpiredError ? 'Refresh token expired' : 'Invalid refresh token',
+      );
+    }
+
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.buildToken(user, ACCESS_TOKEN_SECRET, ACCESS_TOKEN_TTL);
   }
 
   buildToken({ id, username, email, tokenVersion }: UserEntity, secret: string, expiresIn: number): Token {
