@@ -17,5 +17,3 @@ export class PizzaIngredientDto {
   @ApiProperty()
   readonly nameUa: string;
 }
-
-export class PizzaIngredientResponseDto extends PizzaIngredientDto {}

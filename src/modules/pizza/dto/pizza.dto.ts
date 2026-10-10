@@ -1,4 +1,4 @@
-import { PizzaIngredientResponseDto } from '@modules/pizza/dto/pizza-ingredient.dto';
+import { PizzaIngredientDto } from '@modules/pizza/dto/pizza-ingredient.dto';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, IsUrl, ValidateNested } from 'class-validator';
@@ -22,9 +22,9 @@ export class PizzaDto {
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => PizzaIngredientResponseDto)
-  @ApiProperty({ type: [PizzaIngredientResponseDto] })
-  readonly ingredients: PizzaIngredientResponseDto[];
+  @Type(() => PizzaIngredientDto)
+  @ApiProperty({ type: [PizzaIngredientDto] })
+  readonly ingredients: PizzaIngredientDto[];
 
   @IsNotEmpty()
   @IsNumber()

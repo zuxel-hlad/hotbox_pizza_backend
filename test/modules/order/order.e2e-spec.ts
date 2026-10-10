@@ -18,7 +18,8 @@ describe('Order (e2e)', () => {
     username: 'john',
     comment: '',
   };
-  const order = { id: 5, ...newOrder, userId: null };
+  const orderPrice = (200 + 30 + 50) * 2;
+  const order = { id: 5, ...newOrder, price: orderPrice, userId: null };
   let testApp: TestApp;
   let server: App;
   let orderRepository: RepositoryMock;
@@ -33,6 +34,8 @@ describe('Order (e2e)', () => {
     testApp.resetMocks();
     orderRepository = testApp.repository(OrderEntity);
     userRepository = testApp.repository(UserEntity);
+    testApp.repository(PizzaEntity).findBy.mockResolvedValue([{ id: 1, price: 200 }]);
+    testApp.repository(ExtraIngredientEntity).findBy.mockResolvedValue([{ id: 10, price: 30 }]);
   });
 
   afterAll(async () => {
@@ -72,21 +75,19 @@ describe('Order (e2e)', () => {
     });
   });
 
-  it('GET /order/result/:id calculates the price', async () => {
+  it('GET /order/result/:id returns the order with its pizzas', async () => {
     orderRepository.findOne.mockResolvedValue(order);
-    testApp.repository(PizzaEntity).findBy.mockResolvedValue([{ id: 1, price: 200 }]);
-    testApp.repository(ExtraIngredientEntity).findBy.mockResolvedValue([{ id: 10, price: 30 }]);
 
     const response = await request(server).get('/order/result/5').expect(200);
 
-    expect(response.body).toMatchObject({ id: 5, price: 50 + 30 * 2 + 200 * 2 });
+    expect(response.body).toMatchObject({ id: 5, price: orderPrice, pizzas: [{ pizza: { id: 1 }, count: 2 }] });
   });
 
   describe('POST /order/create', () => {
     it('creates a guest order', async () => {
       const response = await request(server).post('/order/create').send(newOrder).expect(201);
 
-      expect(response.body).toMatchObject({ ...newOrder, userId: null });
+      expect(response.body).toMatchObject({ ...newOrder, price: orderPrice, userId: null });
     });
 
     it('links the order to the logged user and adds bonuses', async () => {
