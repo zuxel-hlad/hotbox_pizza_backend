@@ -1,98 +1,136 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# HotBox Pizza API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+REST API for the HotBox Pizza delivery service: pizza catalog with extra ingredients, user accounts with favorites, JWT authentication with password reset by email, and orders.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Tech stack
 
-## Description
+- [NestJS 12](https://docs.nestjs.com) (Express), TypeScript 6
+- PostgreSQL + [TypeORM 1.x](https://typeorm.io) with migrations
+- class-validator, Swagger (OpenAPI)
+- Nodemailer (Gmail SMTP) for OTP emails
+- Jest + Supertest, ESLint + Prettier, Husky + lint-staged
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Features
 
-## Project setup
+- **Auth**: register, login, refresh token renewal, password change and reset via email OTP
+- **Users**: profile, update, favorite pizzas
+- **Pizzas**: CRUD, filtering and pagination
+- **Extra ingredients**: CRUD
+- **Orders**: create, list with filters, payment (stub)
 
-```bash
-$ npm install
-```
+## Getting started
 
-## Compile and run the project
+### Prerequisites
+
+- Node.js >= 24.9 (see `.nvmrc`), npm >= 10
+- Docker (for PostgreSQL)
+
+### Installation
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+git clone git@github.com:zuxel-hlad/hotbox_pizza_backend.git
+cd hotbox_pizza_backend
+nvm use
+npm install
 ```
 
-## Run tests
+### Database
+
+Start PostgreSQL in a container named `postgres` with the credentials from `src/core/database/database.config.ts`:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+docker run -d --name postgres -p 5432:5432 \
+  -e POSTGRES_USER=hotbox_pizza_admin \
+  -e POSTGRES_PASSWORD=12345678 \
+  -e POSTGRES_DB=hotbox_pizza \
+  postgres:17
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Apply migrations:
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm run db:migrate
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Environment variables
 
-## Resources
+Copy `.env.example` to `.env` and fill in:
 
-Check out a few resources that may come in handy when working with NestJS:
+| Variable              | Description                                                             |
+| --------------------- | ----------------------------------------------------------------------- |
+| `USER_EMAIL`          | Gmail address used to send OTP emails                                   |
+| `USER_EMAIL_PASSWORD` | Gmail [app password](https://support.google.com/accounts/answer/185833) |
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Database connection and JWT secrets are currently hard-coded in `src/core/database/database.config.ts` and `src/core/config/jwt.config.ts`.
 
-## Support
+### Run
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+npm run dev          # watch mode
+npm run build        # compile to dist/
+npm run start:prod   # run compiled build
+```
 
-## Stay in touch
+The API listens on `http://localhost:3000`.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## API documentation
+
+Swagger UI is available at [`http://localhost:3000/docs`](http://localhost:3000/docs).
+
+Protected routes expect the header:
+
+```
+Authorization: Token <jwt>
+```
+
+## Scripts
+
+| Script                        | Description                                 |
+| ----------------------------- | ------------------------------------------- |
+| `npm run dev`                 | Start in watch mode                         |
+| `npm run build`               | Build to `dist/`                            |
+| `npm run start:prod`          | Run the compiled app                        |
+| `npm run lint`                | ESLint with autofix                         |
+| `npm run format`              | Prettier (also sorts imports)               |
+| `npm test`                    | Unit tests                                  |
+| `npm run test:e2e`            | E2E tests                                   |
+| `npm run test:cov`            | Unit tests with coverage                    |
+| `npm run db:create -- <path>` | Generate a migration from entity changes    |
+| `npm run db:migrate`          | Apply pending migrations                    |
+| `npm run db:drop`             | Drop the database schema                    |
+| `npm run psql`                | Open `psql` inside the `postgres` container |
+
+Generate a migration after changing an entity:
+
+```bash
+npm run db:create -- src/core/database/migrations/AddSomethingToOrder
+```
+
+## Project structure
+
+```
+src/
+  main.ts, app.module.ts   bootstrap, Swagger, global exception filter
+  common/                  shared decorators, DTOs, filters, helpers, types
+  core/                    infrastructure: config, database, guards, middleware
+    database/migrations/   TypeORM migrations
+  modules/                 feature modules
+    auth/ token/ user/ mail/ pizza/ extra-ingredient/ order/
+test/                      unit and e2e tests
+```
+
+Each feature module follows the same layout (see `src/modules/order/`): module, controller, service, entity, `dto/`, `types/`.
+
+## Development
+
+- Branches: `feature/*`, `fix/*`, `chore/*`, `refactor/*`; pull requests go to `main`.
+- Commits follow [Conventional Commits](https://www.conventionalcommits.org): `feat(order): add order CRUD`.
+- The pre-commit hook runs ESLint and Prettier on staged files.
+- Schema changes go through migrations only (`synchronize` is disabled); never edit applied migrations.
+- Before opening a PR run `npx tsc --noEmit`, `npm run lint` and the tests.
+
+Detailed coding conventions are in [AGENTS.md](AGENTS.md).
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Private project, not licensed for redistribution.
