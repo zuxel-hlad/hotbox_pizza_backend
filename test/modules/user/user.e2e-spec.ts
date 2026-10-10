@@ -6,7 +6,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 
 describe('User (e2e)', () => {
-  const user = { id: 1, email: 'john@x.com', username: 'john', tokenVersion: 0, password: 'hash', bonuses: 150 };
+  const user = { id: 1, email: 'john@x.com', username: 'john', tokenVersion: 0, bonuses: 150 };
   const authHeader = createAuthHeader(user);
   let testApp: TestApp;
   let server: App;

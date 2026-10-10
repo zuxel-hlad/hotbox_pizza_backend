@@ -222,9 +222,11 @@ describe('AuthService', () => {
     it('returns an access token for the user of a valid refresh token', async () => {
       userRepository.findOne.mockResolvedValue(createUser());
 
-      const { token, expiresIn } = await authService.renewAccessToken(sign({ id: 1 }, REFRESH_TOKEN_SECRET));
+      const { token, expiresIn } = await authService.renewAccessToken(
+        sign({ id: 1, tokenVersion: 2 }, REFRESH_TOKEN_SECRET),
+      );
 
-      expect(userRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(userRepository.findOne).toHaveBeenCalledWith({ where: { id: 1, tokenVersion: 2 } });
       expect(expiresIn).toBe(ACCESS_TOKEN_TTL);
       expect(verify(token, ACCESS_TOKEN_SECRET) as JwtPayload).toMatchObject({ id: 1 });
     });
@@ -240,12 +242,12 @@ describe('AuthService', () => {
       });
     });
 
-    it('rejects an unknown user', async () => {
+    it('rejects a revoked token or an unknown user', async () => {
       userRepository.findOne.mockResolvedValue(null);
 
       await expect(authService.renewAccessToken(sign({ id: 1 }, REFRESH_TOKEN_SECRET))).rejects.toMatchObject({
-        message: 'User not found',
-        status: HttpStatus.NOT_FOUND,
+        message: 'Invalid refresh token',
+        status: HttpStatus.UNAUTHORIZED,
       });
     });
   });

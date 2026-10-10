@@ -15,20 +15,9 @@ export class TokenController {
   @ApiOperation({ summary: 'Renew access token' })
   @ApiResponse({ status: HttpStatus.OK, type: TokenDto })
   @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'User not found',
-    schema: { example: { statusCode: 404, message: 'Not found' } },
-  })
-  @ApiResponse({
-    status: HttpStatus.UNPROCESSABLE_ENTITY,
-    description: 'Validation errors',
-    schema: {
-      example: {
-        statusCode: 422,
-        message: ['Refresh token expired', 'Invalid refresh token'],
-        error: 'Unprocessable Entity',
-      },
-    },
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Refresh token expired, invalid or revoked',
+    schema: { example: { statusCode: 401, message: 'Invalid refresh token', error: 'Unauthorized' } },
   })
   @UsePipes(new ValidationPipe(validationsSettings))
   async renewToken(@Body() tokenDto: TokenRenewRequestDto): Promise<Token> {
