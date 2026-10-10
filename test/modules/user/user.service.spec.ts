@@ -66,12 +66,10 @@ describe('UserService', () => {
     });
   });
 
-  it('finds the current user by token claims', async () => {
+  it('finds the current user by the given criteria', async () => {
     await userService.findCurrentUser({ id: 1, tokenVersion: 2 });
 
-    expect(userRepository.findOne).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 1, email: undefined, username: undefined, tokenVersion: 2 } }),
-    );
+    expect(userRepository.findOne).toHaveBeenCalledWith({ where: { id: 1, tokenVersion: 2 } });
   });
 
   it('builds a user response without secrets', () => {
