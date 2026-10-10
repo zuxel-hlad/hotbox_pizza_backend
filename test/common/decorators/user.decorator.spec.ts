@@ -27,8 +27,8 @@ describe('User decorator', () => {
   const factory = getUserFactory();
   const user = { id: 7, email: 'john@x.com' };
 
-  it('returns null when the request has no user', () => {
-    expect(factory(undefined, createContext())).toBeNull();
+  it('returns no user when the request has none', () => {
+    expect(factory(undefined, createContext())).toBeUndefined();
   });
 
   it('returns the whole user without a key', () => {

@@ -2,7 +2,6 @@ import { AppModule } from '@/app.module';
 import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import 'reflect-metadata';
 
 const bootstrap = async (): Promise<void> => {
   const app = await NestFactory.create(AppModule, { cors: true });
@@ -12,7 +11,6 @@ const bootstrap = async (): Promise<void> => {
     .setTitle('HotBox Pizza API')
     .setDescription('The best pizza API')
     .setVersion('1.0')
-    .addTag('hotbox_pizza')
     .addSecurity('Token', {
       type: 'apiKey',
       in: 'header',
@@ -20,8 +18,7 @@ const bootstrap = async (): Promise<void> => {
       description: 'Please enter the token in the format: Token <jwt>',
     })
     .build();
-  const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, documentFactory);
+  SwaggerModule.setup('docs', app, () => SwaggerModule.createDocument(app, config));
 
   await app.listen(3000);
 };

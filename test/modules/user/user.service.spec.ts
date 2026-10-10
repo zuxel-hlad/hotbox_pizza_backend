@@ -1,3 +1,4 @@
+import { UserResponseDto } from '@modules/user/dto/user-response.dto';
 import { UserEntity } from '@modules/user/user.entity';
 import { UserService } from '@modules/user/user.service';
 import { HttpStatus } from '@nestjs/common';
@@ -71,10 +72,11 @@ describe('UserService', () => {
     expect(userRepository.findOne).toHaveBeenCalledWith({ where: { id: 1, tokenVersion: 2 } });
   });
 
-  it('builds a user response without the token version', () => {
-    const { user } = userService.buildUserResponse(createUser());
+  it('builds a user response without secrets', () => {
+    const { user } = JSON.parse(JSON.stringify(userService.buildUserResponse(createUser()))) as UserResponseDto;
 
     expect(user).toMatchObject({ id: 1, email: 'john@x.com', username: 'john' });
+    expect(user).not.toHaveProperty('password');
     expect(user).not.toHaveProperty('tokenVersion');
   });
 });

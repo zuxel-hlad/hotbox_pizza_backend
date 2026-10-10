@@ -15,23 +15,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
-      const res = exception.getResponse();
-
-      if (typeof res === 'object' && res !== null) {
-        const responseObj = res as Record<string, unknown>;
-
-        if (Array.isArray(responseObj['message'])) {
-          message = responseObj['message'] as string[];
-        } else if (typeof responseObj['message'] === 'string') {
-          message = responseObj['message'];
-        } else if (typeof responseObj['error'] === 'string') {
-          message = responseObj['error'];
-        } else {
-          message = JSON.stringify(responseObj);
-        }
-      } else {
-        message = res as string;
-      }
+      message = this.getMessage(exception.getResponse());
     }
 
     this.logger.error(`[${request.method}] ${request.url} → ${JSON.stringify(message)}`);
@@ -42,5 +26,15 @@ export class HttpExceptionFilter implements ExceptionFilter {
       path: request.url,
       message,
     });
+  }
+
+  private getMessage(response: string | object): string | string[] {
+    if (typeof response === 'string') {
+      return response;
+    }
+
+    const { message } = response as { message?: string | string[] };
+
+    return message ?? JSON.stringify(response);
   }
 }

@@ -4,16 +4,8 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
 export const User = createParamDecorator(
   <K extends keyof UserEntity>(data: K | undefined, ctx: ExecutionContext): UserEntity | UserEntity[K] | null => {
-    const request = ctx.switchToHttp().getRequest<ExpressRequest>();
+    const { user } = ctx.switchToHttp().getRequest<ExpressRequest>();
 
-    if (!request.user) {
-      return null;
-    }
-
-    if (data) {
-      return request.user[data];
-    }
-
-    return request.user;
+    return data ? user?.[data] : user;
   },
 );
