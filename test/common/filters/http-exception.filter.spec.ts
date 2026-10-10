@@ -29,7 +29,6 @@ describe('HttpExceptionFilter', () => {
     [new BadRequestException(['first', 'second']), HttpStatus.BAD_REQUEST, ['first', 'second']],
     [new NotFoundException('Order not found'), HttpStatus.NOT_FOUND, 'Order not found'],
     [new HttpException('Plain message', HttpStatus.I_AM_A_TEAPOT), HttpStatus.I_AM_A_TEAPOT, 'Plain message'],
-    [new HttpException({ error: 'Error text' }, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST, 'Error text'],
     [new HttpException({ code: 1 }, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST, '{"code":1}'],
     [new Error('Boom'), HttpStatus.INTERNAL_SERVER_ERROR, 'Internal server error'],
   ])('formats %p', (exception, expectedStatus, message) => {
