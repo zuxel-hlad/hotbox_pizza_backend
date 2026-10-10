@@ -10,7 +10,7 @@ import { UserEntity } from '@modules/user/user.entity';
 import { HttpStatus } from '@nestjs/common';
 import { createRepositoryMock, RepositoryMock } from '@test/helpers/repository.mock';
 import { compare, hash } from 'bcrypt';
-import { JwtPayload, verify } from 'jsonwebtoken';
+import { JwtPayload, sign, verify } from 'jsonwebtoken';
 import { Repository } from 'typeorm';
 
 describe('AuthService', () => {
@@ -215,6 +215,38 @@ describe('AuthService', () => {
       expect(refresh.expiresIn).toBe(REFRESH_TOKEN_TTL);
       expect(verify(access.token, ACCESS_TOKEN_SECRET) as JwtPayload).toMatchObject(payload);
       expect(verify(refresh.token, REFRESH_TOKEN_SECRET) as JwtPayload).toMatchObject(payload);
+    });
+  });
+
+  describe('renewAccessToken', () => {
+    it('returns an access token for the user of a valid refresh token', async () => {
+      userRepository.findOne.mockResolvedValue(createUser());
+
+      const { token, expiresIn } = await authService.renewAccessToken(sign({ id: 1 }, REFRESH_TOKEN_SECRET));
+
+      expect(userRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(expiresIn).toBe(ACCESS_TOKEN_TTL);
+      expect(verify(token, ACCESS_TOKEN_SECRET) as JwtPayload).toMatchObject({ id: 1 });
+    });
+
+    it.each([
+      ['an expired token', sign({ id: 1 }, REFRESH_TOKEN_SECRET, { expiresIn: -1 }), 'Refresh token expired'],
+      ['a token with another secret', sign({ id: 1 }, 'another-secret'), 'Invalid refresh token'],
+      ['a malformed token', 'malformed', 'Invalid refresh token'],
+    ])('rejects %s', async (_case, token, message) => {
+      await expect(authService.renewAccessToken(token)).rejects.toMatchObject({
+        message,
+        status: HttpStatus.UNAUTHORIZED,
+      });
+    });
+
+    it('rejects an unknown user', async () => {
+      userRepository.findOne.mockResolvedValue(null);
+
+      await expect(authService.renewAccessToken(sign({ id: 1 }, REFRESH_TOKEN_SECRET))).rejects.toMatchObject({
+        message: 'User not found',
+        status: HttpStatus.NOT_FOUND,
+      });
     });
   });
 });
