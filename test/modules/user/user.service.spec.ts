@@ -1,3 +1,4 @@
+import { UserResponseDto } from '@modules/user/dto/user-response.dto';
 import { UserEntity } from '@modules/user/user.entity';
 import { UserService } from '@modules/user/user.service';
 import { HttpStatus } from '@nestjs/common';
@@ -13,7 +14,6 @@ describe('UserService', () => {
       id: 1,
       email: 'john@x.com',
       username: 'john',
-      password: 'hash',
       tokenVersion: 2,
     });
 
@@ -66,19 +66,16 @@ describe('UserService', () => {
     });
   });
 
-  it('finds the current user with the password selected', async () => {
+  it('finds the current user by token claims', async () => {
     await userService.findCurrentUser({ id: 1, tokenVersion: 2 });
 
     expect(userRepository.findOne).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: 1, email: undefined, username: undefined, tokenVersion: 2 },
-        select: expect.objectContaining({ password: true }) as object,
-      }),
+      expect.objectContaining({ where: { id: 1, email: undefined, username: undefined, tokenVersion: 2 } }),
     );
   });
 
   it('builds a user response without secrets', () => {
-    const { user } = userService.buildUserResponse(createUser());
+    const { user } = JSON.parse(JSON.stringify(userService.buildUserResponse(createUser()))) as UserResponseDto;
 
     expect(user).toMatchObject({ id: 1, email: 'john@x.com', username: 'john' });
     expect(user).not.toHaveProperty('password');

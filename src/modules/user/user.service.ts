@@ -1,5 +1,5 @@
 import { UpdateUserDto } from '@modules/user/dto/update-user.dto';
-import type { UserResponse } from '@modules/user/types/user-response.interface';
+import { UserResponseDto } from '@modules/user/dto/user-response.dto';
 import { UserEntity } from '@modules/user/user.entity';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -35,22 +35,10 @@ export class UserService {
   async findCurrentUser(user: Partial<UserEntity>): Promise<UserEntity> {
     return await this.userRepository.findOne({
       where: { id: user.id, email: user.email, username: user.username, tokenVersion: user.tokenVersion },
-      select: {
-        birthDate: true,
-        bonuses: true,
-        email: true,
-        id: true,
-        image: true,
-        password: true,
-        phone: true,
-        username: true,
-        tokenVersion: true,
-      },
     });
   }
 
-  buildUserResponse(user: UserEntity): UserResponse {
-    delete user.hashPassword;
+  buildUserResponse(user: UserEntity): UserResponseDto {
     delete user.password;
     delete user.tokenVersion;
 

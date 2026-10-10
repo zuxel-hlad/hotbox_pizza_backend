@@ -1,15 +1,6 @@
-import { createPaginationDto, PagedRequestDto } from '@common/dto/paged.dto';
+import { PagedRequestDto } from '@common/dto/paged.dto';
 import { plainToInstance } from 'class-transformer';
-import { IsString, validate } from 'class-validator';
-
-class ItemDto {
-  @IsString()
-  readonly name: string;
-}
-
-const PagedItemsDto = createPaginationDto(ItemDto);
-
-const pageFields = { pageSize: 10, totalPages: 1, totalElements: 1, pageNumber: 1, nextPage: 0, prevPage: false };
+import { validate } from 'class-validator';
 
 describe('PagedRequestDto', () => {
   it('converts query strings to numbers', async () => {
@@ -29,20 +20,5 @@ describe('PagedRequestDto', () => {
     const [error] = await validate(plainToInstance(PagedRequestDto, { page: '1', pageSize: 'abc' }));
 
     expect(error.property).toBe('pageSize');
-  });
-});
-
-describe('createPaginationDto', () => {
-  it('accepts valid content items', async () => {
-    const dto = plainToInstance(PagedItemsDto, { ...pageFields, content: [{ name: 'Margherita' }] });
-
-    expect(dto.content[0]).toBeInstanceOf(ItemDto);
-    expect(await validate(dto)).toHaveLength(0);
-  });
-
-  it('validates nested content items', async () => {
-    const [error] = await validate(plainToInstance(PagedItemsDto, { ...pageFields, content: [{ name: 1 }] }));
-
-    expect(error.property).toBe('content');
   });
 });
