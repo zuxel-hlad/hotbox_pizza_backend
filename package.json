@@ -15,7 +15,7 @@
     "test:cov": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
     "test:debug": "node --experimental-vm-modules --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/jest/bin/jest.js --runInBand",
     "test:e2e": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testRegex \".*\\\\.e2e-spec\\\\.ts$\"",
-    "psql": "/Library/PostgreSQL/17/bin/psql -U postgres",
+    "psql": "docker exec -it postgres psql -U postgres",
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d src/core/database/data-source.ts",
     "db:drop": "npm run typeorm schema:drop",
     "db:create": "npm run typeorm migration:generate",

@@ -5,7 +5,10 @@ import { PizzaService } from '@modules/pizza/pizza.service';
 import { UserEntity } from '@modules/user/user.entity';
 import { HttpStatus } from '@nestjs/common';
 import { createRepositoryMock, RepositoryMock } from '@test/helpers/repository.mock';
+import { createTransactionManagerMock, TransactionManagerMock } from '@test/helpers/transaction-manager.mock';
 import { Repository } from 'typeorm';
+
+jest.mock('node:crypto', () => ({ randomInt: () => 42 }));
 
 describe('PizzaService', () => {
   const pizzaDto = {
@@ -92,7 +95,7 @@ describe('PizzaService', () => {
 
   describe('create', () => {
     it('rejects a duplicate name', async () => {
-      pizzaRepository.findOne.mockResolvedValue({ id: 1 });
+      pizzaRepository.existsBy.mockResolvedValue(true);
 
       await expect(pizzaService.create(pizzaDto)).rejects.toMatchObject({
         message: 'Pizza with "Margherita" and "Маргарита" already exist.',
@@ -101,13 +104,13 @@ describe('PizzaService', () => {
     });
 
     it('assigns ids to the ingredients', async () => {
-      pizzaRepository.findOne.mockResolvedValue(null);
-      jest.spyOn(pizzaService, 'generateId').mockReturnValue(42);
+      pizzaRepository.existsBy.mockResolvedValue(false);
 
       const pizza = await pizzaService.create(pizzaDto);
 
       expect(pizza).toBeInstanceOf(PizzaEntity);
       expect(pizza.ingredients).toEqual([{ id: 42, nameEn: 'Tomato', nameUa: 'Томат' }]);
+      expect(pizzaDto.ingredients).toEqual([{ nameEn: 'Tomato', nameUa: 'Томат' }]);
     });
   });
 
@@ -126,73 +129,88 @@ describe('PizzaService', () => {
   });
 
   describe('toggleFavorite', () => {
+    let manager: TransactionManagerMock;
+
+    beforeEach(() => {
+      manager = createTransactionManagerMock();
+      pizzaRepository.manager.transaction.mockImplementation(
+        (callback: (transactionManager: TransactionManagerMock) => Promise<PizzaEntity>) => callback(manager),
+      );
+    });
+
     it('rejects a user that no longer exists', async () => {
-      userRepository.findOne.mockResolvedValue(null);
+      manager.existsBy.mockResolvedValue(false);
 
       await expect(pizzaService.toggleFavorite(1, 1)).rejects.toMatchObject({
         message: 'Unauthorized',
         status: HttpStatus.UNAUTHORIZED,
       });
-      expect(pizzaRepository.save).not.toHaveBeenCalled();
+      expect(manager.save).not.toHaveBeenCalled();
     });
 
     it('rejects an unknown pizza', async () => {
-      userRepository.findOne.mockResolvedValue({ favoritePizza: [] });
-      pizzaRepository.findOne.mockResolvedValue(null);
+      manager.existsBy.mockResolvedValue(true);
+      manager.findOne.mockResolvedValue(null);
 
       await expect(pizzaService.toggleFavorite(1, 1)).rejects.toMatchObject({
-        message: 'Pizza not found',
+        message: 'Not found',
         status: HttpStatus.NOT_FOUND,
+      });
+      expect(manager.relation.add).not.toHaveBeenCalled();
+    });
+
+    it('locks the pizza row', async () => {
+      manager.existsBy.mockResolvedValue(true);
+      manager.findOne.mockResolvedValue({ id: 1, favoritesCount: 4 });
+      manager.exists.mockResolvedValue(false);
+
+      await pizzaService.toggleFavorite(1, 1);
+
+      expect(manager.findOne).toHaveBeenCalledWith(PizzaEntity, {
+        where: { id: 1 },
+        lock: { mode: 'pessimistic_write' },
       });
     });
 
     it('adds a pizza to favorites', async () => {
-      const user = { favoritePizza: [] as PizzaEntity[] };
-      userRepository.findOne.mockResolvedValue(user);
-      pizzaRepository.findOne.mockResolvedValue({ id: 1, favoritesCount: 4 });
+      manager.existsBy.mockResolvedValue(true);
+      manager.findOne.mockResolvedValue({ id: 1, favoritesCount: 4 });
+      manager.exists.mockResolvedValue(false);
 
       const pizza = await pizzaService.toggleFavorite(1, 1);
 
       expect(pizza.favoritesCount).toBe(5);
-      expect(user.favoritePizza).toEqual([pizza]);
-      expect(userRepository.save).toHaveBeenCalledWith(user);
-      expect(pizzaRepository.save).toHaveBeenCalledWith(pizza);
+      expect(manager.relation.add).toHaveBeenCalledWith(1);
+      expect(manager.relation.remove).not.toHaveBeenCalled();
+      expect(manager.save).toHaveBeenCalledWith(pizza);
     });
 
     it('removes a pizza from favorites', async () => {
-      const user = { favoritePizza: [{ id: 1 }, { id: 2 }] };
-      userRepository.findOne.mockResolvedValue(user);
-      pizzaRepository.findOne.mockResolvedValue({ id: 1, favoritesCount: 4 });
+      manager.existsBy.mockResolvedValue(true);
+      manager.findOne.mockResolvedValue({ id: 1, favoritesCount: 4 });
+      manager.exists.mockResolvedValue(true);
 
       const pizza = await pizzaService.toggleFavorite(1, 1);
 
       expect(pizza.favoritesCount).toBe(3);
-      expect(user.favoritePizza).toEqual([{ id: 2 }]);
+      expect(manager.relation.remove).toHaveBeenCalledWith(1);
+      expect(manager.relation.add).not.toHaveBeenCalled();
     });
   });
 
   describe('deleteSinglePizza', () => {
     it('rejects an unknown pizza', async () => {
-      pizzaRepository.findOne.mockResolvedValue(null);
+      pizzaRepository.delete.mockResolvedValue({ raw: [], affected: 0 });
 
       await expect(pizzaService.deleteSinglePizza(1)).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND });
     });
 
     it('deletes the pizza by id', async () => {
-      pizzaRepository.findOne.mockResolvedValue({ id: 1 });
+      pizzaRepository.delete.mockResolvedValue({ raw: [], affected: 1 });
 
       await pizzaService.deleteSinglePizza(1);
 
-      expect(pizzaRepository.delete).toHaveBeenCalledWith({ id: 1 });
+      expect(pizzaRepository.delete).toHaveBeenCalledWith(1);
     });
-  });
-
-  it.each([
-    [0, 1],
-    [0.9999999999, 1_000_000_000],
-  ])('generates an id from Math.random() = %p', (random, id) => {
-    jest.spyOn(Math, 'random').mockReturnValueOnce(random);
-
-    expect(pizzaService.generateId()).toBe(id);
   });
 });

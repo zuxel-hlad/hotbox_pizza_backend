@@ -3,10 +3,9 @@ import { CreatePizzaDtoResponse } from '@modules/pizza/dto/create-pizza.dto';
 import { SortEnum } from '@modules/pizza/pizza.constants';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsEnum, IsOptional, IsString, Min } from 'class-validator';
+import { IsEnum, IsOptional, IsString, Min } from 'class-validator';
 
 export class PizzaResponseDto extends CreatePizzaDtoResponse {
-  @IsBoolean()
   @ApiProperty()
   isFavorited: boolean;
 }

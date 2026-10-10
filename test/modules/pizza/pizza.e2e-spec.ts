@@ -3,6 +3,7 @@ import { UserEntity } from '@modules/user/user.entity';
 import { createQueryBuilderMock } from '@test/helpers/query-builder.mock';
 import { RepositoryMock } from '@test/helpers/repository.mock';
 import { createAuthHeader, createTestApp, TestApp } from '@test/helpers/test-app.helper';
+import { createTransactionManagerMock, TransactionManagerMock } from '@test/helpers/transaction-manager.mock';
 import request from 'supertest';
 import { App } from 'supertest/types';
 
@@ -133,7 +134,7 @@ describe('Pizza (e2e)', () => {
 
     it('creates a pizza', async () => {
       authorize();
-      pizzaRepository.findOne.mockResolvedValue(null);
+      pizzaRepository.existsBy.mockResolvedValue(false);
 
       const response = await request(server)
         .post('/pizza/create')
@@ -159,7 +160,7 @@ describe('Pizza (e2e)', () => {
 
     it('rejects a duplicate', async () => {
       authorize();
-      pizzaRepository.findOne.mockResolvedValue(pizza);
+      pizzaRepository.existsBy.mockResolvedValue(true);
 
       await request(server).post('/pizza/create').set('Authorization', authHeader).send(newPizza).expect(409);
     });
@@ -191,12 +192,18 @@ describe('Pizza (e2e)', () => {
       userRepository.findOne.mockResolvedValue(null);
 
       await request(server).put('/pizza/toggle/favorite/1').set('Authorization', authHeader).expect(401);
-      expect(pizzaRepository.save).not.toHaveBeenCalled();
+      expect(pizzaRepository.manager.transaction).not.toHaveBeenCalled();
     });
 
     it('adds a pizza to favorites', async () => {
-      authorize().mockResolvedValueOnce({ ...user, favoritePizza: [] });
-      pizzaRepository.findOne.mockResolvedValue({ ...pizza });
+      const manager = createTransactionManagerMock();
+      authorize();
+      manager.existsBy.mockResolvedValue(true);
+      manager.findOne.mockResolvedValue({ ...pizza });
+      manager.exists.mockResolvedValue(false);
+      pizzaRepository.manager.transaction.mockImplementation(
+        (callback: (transactionManager: TransactionManagerMock) => Promise<PizzaEntity>) => callback(manager),
+      );
 
       await request(server)
         .put('/pizza/toggle/favorite/1')
@@ -207,14 +214,13 @@ describe('Pizza (e2e)', () => {
 
   describe('DELETE /pizza/delete/:id', () => {
     it('deletes a pizza without authorization (known gap)', async () => {
-      pizzaRepository.findOne.mockResolvedValue(pizza);
       pizzaRepository.delete.mockResolvedValue({ raw: [], affected: 1 });
 
       await request(server).delete('/pizza/delete/1').expect(200, { raw: [], affected: 1 });
     });
 
     it('responds 404 for an unknown pizza', async () => {
-      pizzaRepository.findOne.mockResolvedValue(null);
+      pizzaRepository.delete.mockResolvedValue({ raw: [], affected: 0 });
 
       await request(server).delete('/pizza/delete/1').expect(404);
     });
