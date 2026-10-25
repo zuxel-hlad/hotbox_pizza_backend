@@ -39,7 +39,7 @@ src/
   modules/<feature>/              one Nest module = one folder
 ```
 
-Feature modules: `auth`, `token`, `user`, `mail`, `pizza`, `extra-ingredient`, `order`.
+Feature modules: `auth`, `token`, `user`, `admin`, `mail`, `pizza`, `extra-ingredient`, `order`.
 Reference layout is `src/modules/order/`:
 
 ```
@@ -65,6 +65,7 @@ Path aliases (tsconfig + jest): `@/*` -> `src/*`, `@common/*`, `@core/*`, `@modu
 ## Conventions
 
 - File names are kebab-case with a type suffix: `create-order.dto.ts`, `pizza-filters.service.ts`, `user.entity.ts`. No barrel `index.ts` files.
+- Type aliases and interfaces live in `<feature>/types/` (`account.type.ts`, `order-response.ts`), never declared inline in services or controllers.
 - New module: create `src/modules/<feature>/`, follow the `order` layout, register it in `src/app.module.ts`.
 - Use another module's service only if that module `exports` it. For another module's entity, add it to your `TypeOrmModule.forFeature([...])`.
 - Services inject repositories with `@InjectRepository(XEntity)`; complex filtering/paging goes in `<feature>-filters.service.ts` with `createQueryBuilder`.
@@ -73,9 +74,10 @@ Path aliases (tsconfig + jest): `@/*` -> `src/*`, `@common/*`, `@core/*`, `@modu
 - Error messages are flat strings with the field path (`password should not be empty`, `pizzas.0.count must not be less than 1`), built by `validationErrorMap` in `@common/helpers/validation-error-map.helper`. A message passed to a check (`.min(8, '...')`) overrides it; for `refine` pass `{ params: { constraint: 'must be ...' } }` to get `<field> must be ...`.
 - Swagger reads request schemas from `schema` automatically. Responses: `@ApiResponse({ status, standardSchema: xResponseSchema })`. A named body (`@Body('user', ...)`) is not picked up: add `@ApiBody({ schema: toApiSchema(z.object({ user: xSchema })) })` from `@common/helpers/api-schema.helper`. Response schemas must not contain `.transform()` or `z.date()` (not representable in JSON Schema; use `z.iso.datetime()` for dates).
 - Every endpoint has `@ApiOperation` and `@ApiResponse`; every controller has `@ApiTags`. Protected routes add `@UseGuards(AuthGuard)` and `@ApiSecurity('Token')`.
-- Current user: `@User()` (whole `UserEntity`) or `@User('id')` from `@common/decorators/user.decorator`.
+- Roles: `Role` from `@common/types/role.enum` (`ADMIN`, `CLIENT`). Restrict a route or controller with `@Roles([Role.ADMIN])` from `@common/decorators/roles.decorator` next to `@UseGuards(AuthGuard)`, plus a `403` `@ApiResponse`. Without `@Roles` any logged-in account passes. Content writes (pizza, extra-ingredient, order update, admin CRUD) are admin-only; profile update and favorites are client-only.
+- Current account: `@User()` / `@User('id')` from `@common/decorators/user.decorator` (client, `req.user`) and `@Admin()` / `@Admin('id')` from `@common/decorators/admin.decorator` (admin, `req.admin`). Only one of them is set per request.
 - Errors: throw `HttpException` or built-in Nest exceptions from services. `HttpExceptionFilter` formats the response.
-- Auth: header `Authorization: Token <jwt>`. `AuthMiddleware` sets `req.user` on every request. Changing a password bumps `user.tokenVersion` to invalidate old tokens.
+- Auth: header `Authorization: Token <jwt>`. The JWT payload carries `role`; `AuthMiddleware` loads the admin (`role === ADMIN`) into `req.admin` or the client into `req.user`. Changing a password bumps `tokenVersion` to invalidate old tokens. `POST auth/register` takes `role` and validates fields per role (`z.discriminatedUnion`). Email uniqueness across `users` and `admins` goes through `AdminService.ensureEmailIsFree`.
 - Prettier: single quotes, semicolons, trailing commas, printWidth 120.
 
 Example endpoint (`src/modules/order/order.controller.ts`):
@@ -112,4 +114,5 @@ async create(@Body({ schema: createOrderSchema }) newOrder: CreateOrderRequestDt
 
 - DB connection (`src/core/database/database.config.ts`) and JWT secrets (`src/core/config/jwt.config.ts`) are hard-coded, not read from `.env`.
 - Password-reset OTP is kept in memory in `AuthService` (not per user, no expiry).
-- Some write routes have no `AuthGuard` (e.g. `DELETE pizza/delete/:id`, `POST extra-ingredient/create`).
+- Admin registration is public: anyone can call `POST auth/register` with `role: ADMIN`.
+- `POST order/payment` and order reads (`order/list`, `order/:id`) have no `AuthGuard`.
