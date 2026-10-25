@@ -1,22 +1,24 @@
 # HotBox Pizza API
 
-REST API for the HotBox Pizza delivery service: pizza catalog with extra ingredients, user accounts with favorites, JWT authentication with password reset by email, and orders.
+REST API for the HotBox Pizza delivery service: pizza catalog with extra ingredients, client and admin accounts with role-based access, JWT authentication with password reset by email, and orders.
 
 ## Tech stack
 
 - [NestJS 12](https://docs.nestjs.com) (Express), TypeScript 6
 - PostgreSQL + [TypeORM 1.x](https://typeorm.io) with migrations
-- class-validator, Swagger (OpenAPI)
+- Zod for request validation (Standard Schema) and Swagger (OpenAPI) docs generated from the same Zod schemas
 - Nodemailer (Gmail SMTP) for OTP emails
 - Jest + Supertest, ESLint + Prettier, Husky + lint-staged
 
 ## Features
 
-- **Auth**: register, login, refresh token renewal, password change and reset via email OTP
+- **Auth**: register a client or an admin, login, refresh token renewal, password change and reset via email OTP
+- **Roles**: `ADMIN` manages all content, `CLIENT` reads content and manages own profile, favorites and orders
 - **Users**: profile, update, favorite pizzas
-- **Pizzas**: CRUD, filtering and pagination
-- **Extra ingredients**: CRUD
-- **Orders**: create, list with filters, payment (stub)
+- **Admins**: paged list with filters by fields, search and placed orders; update, delete
+- **Pizzas**: read for everyone, CRUD for admins, filtering and pagination
+- **Extra ingredients**: read for everyone, CRUD for admins
+- **Orders**: create (admins can order on behalf of a client), list with filters, update (admins), payment (stub)
 
 ## Getting started
 
@@ -83,6 +85,31 @@ Protected routes expect the header:
 Authorization: Token <jwt>
 ```
 
+The token carries the account role. Admin-only routes return `403 Forbidden` for clients, and client-only routes (profile update, favorites) return `403` for admins.
+
+### Registration
+
+`POST /auth/register` creates a client or an admin depending on `role`. Every field of the chosen role is required; a missing role or field returns `400`.
+
+```json
+{ "user": { "role": "CLIENT", "email": "john@x.com", "username": "john", "password": "password123" } }
+```
+
+```json
+{
+  "user": {
+    "role": "ADMIN",
+    "firstName": "Ann",
+    "lastName": "Lee",
+    "phone": "+380501234567",
+    "email": "admin@x.com",
+    "password": "password123"
+  }
+}
+```
+
+Login, token renewal, password change/reset and `GET /user/me` are shared by both roles. An email can belong to only one account, client or admin.
+
 ## Scripts
 
 | Script                        | Description                                 |
@@ -110,12 +137,12 @@ npm run db:create -- src/core/database/migrations/AddSomethingToOrder
 
 ```
 src/
-  main.ts, app.module.ts   bootstrap, Swagger, global exception filter
+  main.ts, app.module.ts   bootstrap, Swagger, global exception filter and validation pipe
   common/                  shared decorators, DTOs, filters, helpers, types
   core/                    infrastructure: config, database, guards, middleware
     database/migrations/   TypeORM migrations
   modules/                 feature modules
-    auth/ token/ user/ mail/ pizza/ extra-ingredient/ order/
+    auth/ token/ user/ admin/ mail/ pizza/ extra-ingredient/ order/
 test/                      unit and e2e tests
 ```
 
