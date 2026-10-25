@@ -1,46 +1,28 @@
-import { createPaginationDto, PagedRequestDto } from '@common/dto/paged.dto';
-import { CreatePizzaDtoResponse } from '@modules/pizza/dto/create-pizza.dto';
+import { createPagedSchema, pagedRequestSchema } from '@common/dto/paged.dto';
+import { createPizzaResponseSchema } from '@modules/pizza/dto/create-pizza.dto';
 import { SortEnum } from '@modules/pizza/pizza.constants';
-import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
-import { IsEnum, IsOptional, IsString, Min } from 'class-validator';
+import { z } from 'zod';
 
-export class PizzaResponseDto extends CreatePizzaDtoResponse {
-  @ApiProperty()
-  isFavorited: boolean;
-}
+export const pizzaResponseSchema = createPizzaResponseSchema.extend({
+  isFavorited: z.boolean(),
+});
 
-export class PagedPizzaRequestDto extends PagedRequestDto {
-  @IsOptional()
-  @IsString()
-  @ApiProperty({ required: false })
-  readonly searchQuery: string;
+export const pagedPizzaRequestSchema = pagedRequestSchema.extend({
+  searchQuery: z.string().optional(),
+  favoritesCount: z
+    .enum(SortEnum)
+    .optional()
+    .meta({ description: 'Sort by favorites count. Available values: ASC/DESC' }),
+  price: z.enum(SortEnum).optional().meta({ description: 'Sort by price. Available values: ASC/DESC' }),
+  priceMin: z.coerce
+    .number()
+    .min(1, 'The min price value must be at least 1.')
+    .optional()
+    .meta({ description: 'Sort by range minPrice/maxPrice.' }),
+  priceMax: z.coerce.number().optional().meta({ description: 'Sort by range minPrice/maxPrice.' }),
+  calories: z.enum(SortEnum).optional().meta({ description: 'Sort by pizza calories. Available values: ASC/DESC' }),
+});
 
-  @IsOptional()
-  @IsEnum(SortEnum)
-  @ApiProperty({ required: false, description: 'Sort by favorites count. Available values: ASC/DESC' })
-  readonly favoritesCount: SortEnum;
+export const pagedPizzaResponseSchema = createPagedSchema(pizzaResponseSchema);
 
-  @IsOptional()
-  @IsEnum(SortEnum)
-  @ApiProperty({ required: false, description: 'Sort by price. Available values: ASC/DESC' })
-  readonly price: SortEnum;
-
-  @Transform(({ value }: { value: string }) => Number(value))
-  @IsOptional()
-  @Min(1, { message: 'The min price value must be at least 1.' })
-  @ApiProperty({ required: false, description: 'Sort by range minPrice/maxPrice.' })
-  readonly priceMin: number;
-
-  @Transform(({ value }: { value: string }) => Number(value))
-  @IsOptional()
-  @ApiProperty({ required: false, description: 'Sort by range minPrice/maxPrice.' })
-  readonly priceMax: number;
-
-  @IsOptional()
-  @IsEnum(SortEnum)
-  @ApiProperty({ required: false, description: 'Sort by pizza calories. Available values: ASC/DESC' })
-  readonly calories: SortEnum;
-}
-
-export class PagedPizzaResponseDto extends createPaginationDto(PagedPizzaRequestDto) {}
+export type PagedPizzaRequestDto = z.infer<typeof pagedPizzaRequestSchema>;

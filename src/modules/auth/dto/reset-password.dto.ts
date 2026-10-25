@@ -1,17 +1,12 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty } from 'class-validator';
+import { z } from 'zod';
 
-export class ResetPasswordDto {
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsEmail()
-  readonly email: string;
-}
+export const resetPasswordSchema = z.strictObject({
+  email: z.email(),
+});
 
-export class ResetPasswordResponseDto {
-  @ApiProperty({ example: 'Reset password code sent to st**********n@gmail.com' })
-  readonly message: string;
+export const resetPasswordResponseSchema = z.object({
+  message: z.string().meta({ example: 'Reset password code sent to st**********n@gmail.com' }),
+  statusCode: z.number().meta({ example: 200 }),
+});
 
-  @ApiProperty({ example: 200 })
-  readonly statusCode: number;
-}
+export type ResetPasswordDto = z.infer<typeof resetPasswordSchema>;

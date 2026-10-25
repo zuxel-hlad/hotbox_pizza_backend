@@ -1,25 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsString } from 'class-validator';
+import { z } from 'zod';
 
-export class CreateExtraIngredientRequestDto {
-  @ApiProperty()
-  @IsString()
-  readonly nameEn: string;
+export const createExtraIngredientSchema = z.strictObject({
+  nameEn: z.string(),
+  nameUa: z.string(),
+  calories: z.number(),
+  price: z.number(),
+});
 
-  @ApiProperty()
-  @IsString()
-  readonly nameUa: string;
+export const createExtraIngredientResponseSchema = createExtraIngredientSchema.extend({
+  id: z.number(),
+});
 
-  @ApiProperty()
-  @IsNumber()
-  readonly calories: number;
-
-  @ApiProperty()
-  @IsNumber()
-  readonly price: number;
-}
-
-export class CreateExtraIngredientResponseDto extends CreateExtraIngredientRequestDto {
-  @ApiProperty()
-  readonly id: number;
-}
+export type CreateExtraIngredientRequestDto = z.infer<typeof createExtraIngredientSchema>;

@@ -1,13 +1,9 @@
 import { PaymentType } from '@modules/order/order.constants';
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNumber } from 'class-validator';
+import { z } from 'zod';
 
-export class PaymentDto {
-  @IsNumber()
-  @ApiProperty()
-  readonly orderId: number;
+export const paymentSchema = z.strictObject({
+  orderId: z.number(),
+  paymentType: z.enum(PaymentType).meta({ example: PaymentType.ONLINE_PAYMENT }),
+});
 
-  @IsEnum(PaymentType)
-  @ApiProperty({ example: PaymentType.ONLINE_PAYMENT })
-  readonly paymentType: PaymentType;
-}
+export type PaymentDto = z.infer<typeof paymentSchema>;

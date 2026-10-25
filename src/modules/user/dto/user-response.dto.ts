@@ -1,29 +1,15 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { z } from 'zod';
 
-export class UserResponse {
-  @ApiProperty()
-  readonly id: number;
+export const userResponseSchema = z.object({
+  user: z.object({
+    id: z.number(),
+    email: z.string(),
+    username: z.string(),
+    birthDate: z.string(),
+    bonuses: z.number(),
+    image: z.string(),
+    phone: z.string(),
+  }),
+});
 
-  @ApiProperty()
-  readonly email: string;
-
-  @ApiProperty()
-  readonly username: string;
-
-  @ApiProperty()
-  readonly birthDate: string;
-
-  @ApiProperty()
-  readonly bonuses: number;
-
-  @ApiProperty()
-  readonly image: string;
-
-  @ApiProperty()
-  readonly phone: string;
-}
-
-export class UserResponseDto {
-  @ApiProperty({ type: UserResponse })
-  user: UserResponse;
-}
+export type UserResponseDto = z.infer<typeof userResponseSchema>;

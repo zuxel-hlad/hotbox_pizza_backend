@@ -54,8 +54,18 @@ describe('Order (e2e)', () => {
       expect(response.body).toMatchObject({ totalElements: 1, totalPages: 1, content: [order] });
     });
 
-    it('rejects an unknown status', async () => {
-      await request(server).get('/order/list').query({ page: 1, pageSize: 10, status: 'LOST' }).expect(400);
+    it.each([
+      [{ status: 'LOST' }, 'status must be one of the following values: CANCELED, DONE, PENDING, PAID'],
+      [{ orderId: 'abc' }, 'orderId must be a number'],
+      [{ createdAt: '01.01.2026' }, 'createdAt must be a valid ISO 8601 date string'],
+      [{ primaryPhone: '0501234567' }, 'primaryPhone must be a valid phone number'],
+    ])('rejects the query %p', async (query, message) => {
+      const response = await request(server)
+        .get('/order/list')
+        .query({ page: 1, pageSize: 10, ...query })
+        .expect(400);
+
+      expect(response.body).toMatchObject({ message: [message] });
     });
   });
 
@@ -103,11 +113,30 @@ describe('Order (e2e)', () => {
       expect(userRepository.save).toHaveBeenCalledWith(expect.objectContaining({ bonuses: 250 }));
     });
 
-    it('rejects an invalid phone', async () => {
-      await request(server)
+    it('defaults a missing comment to an empty string', async () => {
+      const response = await request(server)
         .post('/order/create')
-        .send({ ...newOrder, primaryPhone: '123' })
+        .send({ ...newOrder, comment: undefined })
+        .expect(201);
+
+      expect(response.body).toMatchObject({ comment: '' });
+    });
+
+    it.each([
+      [{ primaryPhone: '123' }, 'primaryPhone must be a valid phone number'],
+      [{ pizzas: [] }, 'pizzas should not be empty'],
+      [
+        { pizzas: [{ ...newOrder.pizzas[0], extraIngredientsIds: [10, 10] }] },
+        'pizzas.0.extraIngredientsIds elements must be unique',
+      ],
+      [{ pizzas: [{ ...newOrder.pizzas[0], count: 0 }] }, 'pizzas.0.count must not be less than 1'],
+    ])('rejects %p', async (body, message) => {
+      const response = await request(server)
+        .post('/order/create')
+        .send({ ...newOrder, ...body })
         .expect(400);
+
+      expect(response.body).toMatchObject({ message: [message] });
     });
   });
 

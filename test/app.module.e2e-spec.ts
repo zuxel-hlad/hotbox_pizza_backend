@@ -1,3 +1,4 @@
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { createTestApp, TestApp } from '@test/helpers/test-app.helper';
 import request from 'supertest';
 
@@ -21,5 +22,11 @@ describe('AppModule (e2e)', () => {
       path: '/unknown',
       message: 'Cannot GET /unknown',
     });
+  });
+
+  it('builds the Swagger document', () => {
+    const document = SwaggerModule.createDocument(testApp.app, new DocumentBuilder().build());
+
+    expect(document.paths['/pizza'].get.responses['200']).toBeDefined();
   });
 });

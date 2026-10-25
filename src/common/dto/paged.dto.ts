@@ -1,46 +1,18 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
-import { IsNumber, Min } from 'class-validator';
+import { z } from 'zod';
 
-export class PagedDto {
-  @ApiProperty({ default: 1 })
-  readonly pageSize: number;
+const pagedSchema = z.object({
+  pageSize: z.number(),
+  totalPages: z.number(),
+  totalElements: z.number(),
+  pageNumber: z.number(),
+  nextPage: z.boolean(),
+  prevPage: z.boolean(),
+});
 
-  @ApiProperty()
-  readonly totalPages: number;
+export const pagedRequestSchema = z.strictObject({
+  page: z.coerce.number().min(1, 'The page value must be at least 1.'),
+  pageSize: z.coerce.number().min(1, 'The page size value must be at least 1.'),
+});
 
-  @ApiProperty()
-  readonly totalElements: number;
-
-  @ApiProperty()
-  readonly pageNumber: number;
-
-  @ApiProperty()
-  readonly nextPage: boolean;
-
-  @ApiProperty()
-  readonly prevPage: boolean;
-}
-
-export class PagedRequestDto {
-  @Transform(({ value }: { value: string }) => Number(value))
-  @IsNumber()
-  @Min(1, { message: 'The page value must be at least 1.' })
-  @ApiProperty({ default: 1 })
-  readonly page: number;
-
-  @Transform(({ value }: { value: string }) => Number(value))
-  @IsNumber()
-  @Min(1, { message: 'The page size value must be at least 1.' })
-  @ApiProperty({ default: 1 })
-  readonly pageSize: number;
-}
-
-export const createPaginationDto = <T>(ItemDto: new () => T) => {
-  class PagedResponseDto extends PagedDto {
-    @ApiProperty({ type: [ItemDto] })
-    readonly content: T[];
-  }
-
-  return PagedResponseDto;
-};
+export const createPagedSchema = <T extends z.ZodType>(itemSchema: T) =>
+  pagedSchema.extend({ content: z.array(itemSchema) });

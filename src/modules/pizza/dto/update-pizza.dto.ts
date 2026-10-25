@@ -1,4 +1,6 @@
-import { PizzaDto } from '@modules/pizza/dto/pizza.dto';
-import { PartialType } from '@nestjs/swagger';
+import { pizzaSchema } from '@modules/pizza/dto/pizza.dto';
+import { z } from 'zod';
 
-export class UpdatePizzaDtoRequest extends PartialType(PizzaDto) {}
+export const updatePizzaSchema = pizzaSchema.partial();
+
+export type UpdatePizzaDtoRequest = z.infer<typeof updatePizzaSchema>;

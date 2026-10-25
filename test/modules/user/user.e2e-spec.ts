@@ -67,14 +67,37 @@ describe('User (e2e)', () => {
       expect(userRepository.save).toHaveBeenCalledWith(expect.objectContaining({ phone: '+380501234567' }));
     });
 
-    it('rejects an invalid phone', async () => {
+    it('turns empty optional fields into undefined', async () => {
       userRepository.findOne.mockResolvedValue({ ...user });
+      userRepository.save.mockImplementation((entity: object) => Promise.resolve(entity));
 
       await request(server)
         .put('/user/update')
         .set('Authorization', authHeader)
-        .send({ user: { phone: '123' } })
+        .send({ user: { phone: '', image: '', birthDate: '' } })
+        .expect(200);
+
+      expect(userRepository.save.mock.calls[0][0]).toMatchObject({
+        phone: undefined,
+        image: undefined,
+        birthDate: undefined,
+      });
+    });
+
+    it.each([
+      [{ phone: '123' }, 'phone must be a valid phone number'],
+      [{ image: 'ftp://x.com/a.png' }, 'image must be a URL address'],
+      [{ birthDate: '31.12.2000' }, 'birthDate must be a valid ISO 8601 date string'],
+    ])('rejects %p', async (body, message) => {
+      userRepository.findOne.mockResolvedValue({ ...user });
+
+      const response = await request(server)
+        .put('/user/update')
+        .set('Authorization', authHeader)
+        .send({ user: body })
         .expect(400);
+
+      expect(response.body).toMatchObject({ message: [message] });
     });
 
     it('rejects a taken username', async () => {

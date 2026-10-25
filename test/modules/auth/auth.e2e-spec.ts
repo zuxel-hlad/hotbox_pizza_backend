@@ -45,6 +45,14 @@ describe('Auth (e2e)', () => {
       expectTokens(response.body as AuthResponse);
     });
 
+    it('rejects a body without the user wrapper', async () => {
+      const response = await request(server).post('/auth/register').send({}).expect(400);
+
+      expect(response.body).toMatchObject({
+        message: ['email should not be empty', 'username should not be empty', 'password should not be empty'],
+      });
+    });
+
     it('rejects invalid fields', async () => {
       const response = await request(server)
         .post('/auth/register')

@@ -1,29 +1,13 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { ArrayUnique, IsArray, IsBoolean, IsInt, Min } from 'class-validator';
+import { z } from 'zod';
 
-export class OrderPizzaDto {
-  @IsInt()
-  @ApiProperty()
-  readonly pizzaId: number;
+export const orderPizzaSchema = z.strictObject({
+  pizzaId: z.number().int(),
+  count: z.number().int().min(1),
+  extraIngredientsIds: z
+    .array(z.number().int())
+    .refine((ids) => new Set(ids).size === ids.length, { params: { constraint: 'elements must be unique' } }),
+  cheeseStuffedCrust: z.boolean(),
+  sausageStuffedCrust: z.boolean(),
+});
 
-  @IsInt()
-  @Min(1)
-  @ApiProperty({ minimum: 1 })
-  readonly count: number;
-
-  @IsArray()
-  @ArrayUnique()
-  @IsInt({ each: true })
-  @Type(() => Number)
-  @ApiProperty({ type: [Number] })
-  readonly extraIngredientsIds: number[];
-
-  @IsBoolean()
-  @ApiProperty()
-  readonly cheeseStuffedCrust: boolean;
-
-  @IsBoolean()
-  @ApiProperty()
-  readonly sausageStuffedCrust: boolean;
-}
+export type OrderPizzaDto = z.infer<typeof orderPizzaSchema>;

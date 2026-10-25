@@ -112,9 +112,13 @@ export class AuthService {
     try {
       ({ id: userId, tokenVersion } = verify(refreshToken, REFRESH_TOKEN_SECRET) as UserEntity);
     } catch (error) {
-      throw new UnauthorizedException(
-        error instanceof TokenExpiredError ? 'Refresh token expired' : 'Invalid refresh token',
-      );
+      const isTokenExpired = error instanceof TokenExpiredError;
+
+      if (isTokenExpired) {
+        throw new UnauthorizedException('Refresh token expired');
+      }
+
+      throw new UnauthorizedException('Invalid refresh token');
     }
 
     const user = await this.userRepository.findOne({ where: { id: userId, tokenVersion } });

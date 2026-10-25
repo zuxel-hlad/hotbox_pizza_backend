@@ -1,4 +1,6 @@
-import { CreateExtraIngredientRequestDto } from '@modules/extra-ingredient/dto/create-extra-ingredient.dto';
-import { PartialType } from '@nestjs/swagger';
+import { createExtraIngredientSchema } from '@modules/extra-ingredient/dto/create-extra-ingredient.dto';
+import { z } from 'zod';
 
-export class UpdateExtraIngredientRequestDto extends PartialType(CreateExtraIngredientRequestDto) {}
+export const updateExtraIngredientSchema = createExtraIngredientSchema.partial();
+
+export type UpdateExtraIngredientRequestDto = z.infer<typeof updateExtraIngredientSchema>;

@@ -49,7 +49,7 @@ export class OrderService {
     }
 
     const pizzas = await this.buildOrderPizzas(newOrder.pizzas);
-    const user = userId ? await this.userRepository.findOne({ where: { id: userId } }) : null;
+    const user = await this.findUserById(userId);
 
     if (user) {
       user.bonuses += ORDER_BONUSES;
@@ -101,7 +101,7 @@ export class OrderService {
       return;
     }
 
-    const user = order.userId ? await this.userRepository.findOne({ where: { id: order.userId } }) : null;
+    const user = await this.findUserById(order.userId);
 
     if (!user || user.bonuses < order.price) {
       throw new HttpException('Payment failed. Not enough bonuses', HttpStatus.BAD_REQUEST);
@@ -159,5 +159,13 @@ export class OrderService {
 
       return total + pizzaPrice * orderPizza.count;
     }, 0);
+  }
+
+  private async findUserById(userId: number | null | undefined): Promise<UserEntity | null> {
+    if (!userId) {
+      return null;
+    }
+
+    return await this.userRepository.findOne({ where: { id: userId } });
   }
 }
