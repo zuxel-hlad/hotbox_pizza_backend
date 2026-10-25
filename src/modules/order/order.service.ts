@@ -4,6 +4,7 @@ import { CreateOrderRequestDto } from '@modules/order/dto/create-order.dto';
 import { OrderPizzaDto } from '@modules/order/dto/order-pizza.dto';
 import { PagedOrdersRequestDto } from '@modules/order/dto/paged-orders.dto';
 import { PaymentDto } from '@modules/order/dto/payment.dto';
+import { UpdateOrderRequestDto } from '@modules/order/dto/update-order.dto';
 import { OrderFilterService } from '@modules/order/order-filters.service';
 import {
   CHEESE_CRUST_PRICE,
@@ -39,17 +40,18 @@ export class OrderService {
     return await this.orderFilters.getFilteredData(query);
   }
 
-  async create(newOrder: CreateOrderRequestDto, userId?: number): Promise<OrderResponse> {
-    const hasBothCrusts = newOrder.pizzas.some(
-      (orderPizza) => orderPizza.cheeseStuffedCrust && orderPizza.sausageStuffedCrust,
-    );
+  async create(newOrder: CreateOrderRequestDto, userId?: number, adminId?: number): Promise<OrderResponse> {
+    const { userId: clientId, ...orderData } = newOrder;
+    const targetUserId = adminId ? clientId : userId;
 
-    if (hasBothCrusts) {
-      throw new HttpException('Pizza cannot have both cheese and sausage stuffed crust', HttpStatus.BAD_REQUEST);
+    this.ensureSingleCrust(orderData.pizzas);
+
+    const pizzas = await this.buildOrderPizzas(orderData.pizzas);
+    const user = await this.findUserById(targetUserId);
+
+    if (adminId && clientId && !user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
-
-    const pizzas = await this.buildOrderPizzas(newOrder.pizzas);
-    const user = await this.findUserById(userId);
 
     if (user) {
       user.bonuses += ORDER_BONUSES;
@@ -57,10 +59,30 @@ export class OrderService {
     }
 
     const order = Object.assign(new OrderEntity(), {
-      ...newOrder,
+      ...orderData,
       price: this.calculatePrice(pizzas),
       userId: user?.id ?? null,
+      adminId: adminId ?? null,
     });
+
+    return await this.orderRepository.save(order);
+  }
+
+  async update(orderId: number, updateOrderDto: UpdateOrderRequestDto): Promise<OrderResponse> {
+    const order = await this.findById(orderId);
+
+    if (updateOrderDto.pizzas && order.status === OrderStatus.PAID) {
+      throw new HttpException('Order already paid. Pizzas cannot be changed', HttpStatus.BAD_REQUEST);
+    }
+
+    if (updateOrderDto.pizzas) {
+      this.ensureSingleCrust(updateOrderDto.pizzas);
+
+      const pizzas = await this.buildOrderPizzas(updateOrderDto.pizzas);
+      order.price = this.calculatePrice(pizzas);
+    }
+
+    Object.assign(order, updateOrderDto);
 
     return await this.orderRepository.save(order);
   }
@@ -113,6 +135,16 @@ export class OrderService {
       await manager.save(user);
       await manager.save(order);
     });
+  }
+
+  private ensureSingleCrust(orderPizzas: OrderPizzaDto[]): void {
+    const hasBothCrusts = orderPizzas.some(
+      (orderPizza) => orderPizza.cheeseStuffedCrust && orderPizza.sausageStuffedCrust,
+    );
+
+    if (hasBothCrusts) {
+      throw new HttpException('Pizza cannot have both cheese and sausage stuffed crust', HttpStatus.BAD_REQUEST);
+    }
   }
 
   private async buildOrderPizzas(orderPizzas: OrderPizzaDto[]): Promise<OrderResultPizzaDto[]> {

@@ -9,6 +9,7 @@ export const createQueryBuilderMock = <T>(entities: T[] = [], count = entities.l
     orderBy: jest.fn(),
     getCount: jest.fn().mockResolvedValue(count),
     getMany: jest.fn().mockResolvedValue(entities),
+    getManyAndCount: jest.fn().mockResolvedValue([entities, count]),
   };
 
   for (const method of ['where', 'orWhere', 'andWhere', 'clone', 'skip', 'take', 'orderBy'] as const) {

@@ -1,4 +1,6 @@
+import { Roles } from '@common/decorators/roles.decorator';
 import { User } from '@common/decorators/user.decorator';
+import { Role } from '@common/types/role.enum';
 import { AuthGuard } from '@core/guards/auth.guard';
 import {
   type CreatePizzaDtoRequest,
@@ -40,6 +42,8 @@ export class PizzaController {
 
   @Get('favorite')
   @UseGuards(AuthGuard)
+  @Roles([Role.CLIENT])
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, example: { statusCode: HttpStatus.FORBIDDEN, message: 'Forbidden.' } })
   @ApiSecurity('Token')
   @ApiResponse({ status: HttpStatus.OK, standardSchema: z.array(pizzaResponseSchema) })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, example: { statusCode: HttpStatus.NOT_FOUND, message: 'Not found' } })
@@ -75,6 +79,8 @@ export class PizzaController {
 
   @Post('create')
   @UseGuards(AuthGuard)
+  @Roles([Role.ADMIN])
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, example: { statusCode: HttpStatus.FORBIDDEN, message: 'Forbidden.' } })
   @ApiSecurity('Token')
   @ApiResponse({ status: HttpStatus.CREATED, standardSchema: createPizzaResponseSchema })
   @ApiResponse({
@@ -92,6 +98,8 @@ export class PizzaController {
 
   @Put('update/:id')
   @UseGuards(AuthGuard)
+  @Roles([Role.ADMIN])
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, example: { statusCode: HttpStatus.FORBIDDEN, message: 'Forbidden.' } })
   @ApiSecurity('Token')
   @ApiResponse({ status: HttpStatus.OK, standardSchema: createPizzaResponseSchema })
   @ApiResponse({
@@ -107,6 +115,9 @@ export class PizzaController {
   }
 
   @Delete('delete/:id')
+  @UseGuards(AuthGuard)
+  @Roles([Role.ADMIN])
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, example: { statusCode: HttpStatus.FORBIDDEN, message: 'Forbidden.' } })
   @ApiSecurity('Token')
   @ApiResponse({ status: HttpStatus.NO_CONTENT })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, example: { statusCode: HttpStatus.NOT_FOUND, message: 'Not found' } })
@@ -121,6 +132,8 @@ export class PizzaController {
 
   @Put('toggle/favorite/:id')
   @UseGuards(AuthGuard)
+  @Roles([Role.CLIENT])
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, example: { statusCode: HttpStatus.FORBIDDEN, message: 'Forbidden.' } })
   @ApiSecurity('Token')
   @ApiResponse({ status: HttpStatus.OK, standardSchema: createPizzaResponseSchema })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized' })

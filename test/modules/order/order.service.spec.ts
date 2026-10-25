@@ -88,6 +88,36 @@ describe('OrderService', () => {
       expect(order.userId).toBe(1);
     });
 
+    it('links an admin order to the given user', async () => {
+      const user = { id: 3, bonuses: 150 };
+      userRepository.findOne.mockResolvedValue(user);
+
+      const order = await orderService.create({ ...orderDto, userId: 3 }, undefined, 9);
+
+      expect(userRepository.findOne).toHaveBeenCalledWith({ where: { id: 3 } });
+      expect(user.bonuses).toBe(250);
+      expect(order).toMatchObject({ userId: 3, adminId: 9 });
+    });
+
+    it('rejects an admin order for an unknown user', async () => {
+      userRepository.findOne.mockResolvedValue(null);
+
+      await expect(orderService.create({ ...orderDto, userId: 3 }, undefined, 9)).rejects.toMatchObject({
+        message: 'User not found',
+        status: HttpStatus.NOT_FOUND,
+      });
+      expect(orderRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('ignores the body user id for a client order', async () => {
+      userRepository.findOne.mockResolvedValue({ id: 1, bonuses: 150 });
+
+      const order = await orderService.create({ ...orderDto, userId: 3 }, 1);
+
+      expect(userRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(order).toMatchObject({ userId: 1, adminId: null });
+    });
+
     it('saves a guest order when the user is not found', async () => {
       userRepository.findOne.mockResolvedValue(null);
 
@@ -115,6 +145,44 @@ describe('OrderService', () => {
 
       await expect(orderService.create(orderDto)).rejects.toMatchObject({ status: HttpStatus.BAD_REQUEST });
       expect(orderRepository.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('update', () => {
+    it('rejects an unknown order', async () => {
+      orderRepository.findOne.mockResolvedValue(null);
+
+      await expect(orderService.update(1, { comment: 'call me' })).rejects.toMatchObject({
+        status: HttpStatus.NOT_FOUND,
+      });
+    });
+
+    it('updates fields without touching the price', async () => {
+      orderRepository.findOne.mockResolvedValue({ id: 1, price: 999, comment: '' });
+
+      const order = await orderService.update(1, { comment: 'call me', status: OrderStatus.DONE });
+
+      expect(order).toEqual({ id: 1, price: 999, comment: 'call me', status: OrderStatus.DONE });
+      expect(pizzaRepository.findBy).not.toHaveBeenCalled();
+    });
+
+    it('rejects changing pizzas of a paid order', async () => {
+      orderRepository.findOne.mockResolvedValue({ id: 1, price: 400, status: OrderStatus.PAID });
+
+      await expect(orderService.update(1, { pizzas: orderDto.pizzas })).rejects.toMatchObject({
+        message: 'Order already paid. Pizzas cannot be changed',
+        status: HttpStatus.BAD_REQUEST,
+      });
+      expect(orderRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('recalculates the price when pizzas change', async () => {
+      orderRepository.findOne.mockResolvedValue({ id: 1, price: 999 });
+
+      const order = await orderService.update(1, { pizzas: orderDto.pizzas });
+
+      expect(order).toMatchObject({ id: 1, price: orderPrice, pizzas: orderDto.pizzas });
+      expect(orderRepository.save).toHaveBeenCalledWith(order);
     });
   });
 

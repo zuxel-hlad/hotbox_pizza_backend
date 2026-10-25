@@ -1,3 +1,4 @@
+import { AdminEntity } from '@modules/admin/admin.entity';
 import { AuthResponse } from '@modules/auth/types/auth-response.interface';
 import { UserEntity } from '@modules/user/user.entity';
 import { RepositoryMock } from '@test/helpers/repository.mock';
@@ -34,7 +35,15 @@ describe('Auth (e2e)', () => {
   });
 
   describe('POST /auth/register', () => {
-    const newUser = { email: 'john@x.com', username: 'john', password };
+    const newUser = { role: 'CLIENT', email: 'john@x.com', username: 'john', password };
+    const newAdmin = {
+      role: 'ADMIN',
+      firstName: 'Ann',
+      lastName: 'Lee',
+      phone: '+380501234567',
+      email: 'admin@x.com',
+      password,
+    };
 
     it('registers a user and returns tokens', async () => {
       userRepository.findOne.mockResolvedValue(null);
@@ -45,24 +54,49 @@ describe('Auth (e2e)', () => {
       expectTokens(response.body as AuthResponse);
     });
 
-    it('rejects a body without the user wrapper', async () => {
+    it('registers an admin and returns tokens', async () => {
+      userRepository.findOne.mockResolvedValue(null);
+      testApp
+        .repository(AdminEntity)
+        .save.mockImplementation((entity: AdminEntity) => Promise.resolve({ ...entity, id: 5 }));
+
+      const response = await request(server).post('/auth/register').send({ user: newAdmin }).expect(201);
+
+      expectTokens(response.body as AuthResponse);
+      expect(userRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('rejects a body without a role', async () => {
       const response = await request(server).post('/auth/register').send({}).expect(400);
 
+      expect(response.body).toMatchObject({ message: ['role must be one of the following values: ADMIN, CLIENT'] });
+    });
+
+    it('rejects an admin without admin fields', async () => {
+      const response = await request(server)
+        .post('/auth/register')
+        .send({ user: { role: 'ADMIN', email: 'admin@x.com', password } })
+        .expect(400);
+
       expect(response.body).toMatchObject({
-        message: ['email should not be empty', 'username should not be empty', 'password should not be empty'],
+        message: expect.arrayContaining([
+          'firstName should not be empty',
+          'lastName should not be empty',
+          'phone should not be empty',
+        ]) as string[],
       });
     });
 
     it('rejects invalid fields', async () => {
       const response = await request(server)
         .post('/auth/register')
-        .send({ user: { email: 'not-an-email', username: 'john', password: 'short', role: 'admin' } })
+        .send({ user: { role: 'CLIENT', email: 'not-an-email', username: 'john', password: 'short', bonuses: 1 } })
         .expect(400);
 
       expect(response.body).toMatchObject({
         statusCode: 400,
         message: expect.arrayContaining([
-          'property role should not exist',
+          'property bonuses should not exist',
           'email must be an email',
           'Password must be more than 8 characters long.',
         ]) as string[],
@@ -70,7 +104,7 @@ describe('Auth (e2e)', () => {
     });
 
     it('rejects a taken email', async () => {
-      userRepository.findOne.mockResolvedValueOnce(user).mockResolvedValueOnce(null);
+      userRepository.existsBy.mockResolvedValue(true);
 
       const response = await request(server).post('/auth/register').send({ user: newUser }).expect(422);
 

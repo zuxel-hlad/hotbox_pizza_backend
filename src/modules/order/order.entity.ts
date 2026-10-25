@@ -1,3 +1,4 @@
+import { AdminEntity } from '@modules/admin/admin.entity';
 import { OrderPizzaDto } from '@modules/order/dto/order-pizza.dto';
 import { OrderStatus, PaymentType } from '@modules/order/order.constants';
 import { UserEntity } from '@modules/user/user.entity';
@@ -40,4 +41,10 @@ export class OrderEntity {
 
   @Column({ nullable: true })
   userId: number | null;
+
+  @ManyToOne(() => AdminEntity, (admin) => admin.orders, { nullable: true, onDelete: 'SET NULL' })
+  admin: AdminEntity | null;
+
+  @Column({ nullable: true })
+  adminId: number | null;
 }

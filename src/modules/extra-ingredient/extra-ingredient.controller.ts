@@ -1,3 +1,5 @@
+import { Roles } from '@common/decorators/roles.decorator';
+import { Role } from '@common/types/role.enum';
 import { AuthGuard } from '@core/guards/auth.guard';
 import {
   type CreateExtraIngredientRequestDto,
@@ -37,6 +39,7 @@ const ApiIngredientErrors = () =>
       status: HttpStatus.UNAUTHORIZED,
       example: { statusCode: HttpStatus.UNAUTHORIZED, message: 'Not authorized' },
     }),
+    ApiResponse({ status: HttpStatus.FORBIDDEN, example: { statusCode: HttpStatus.FORBIDDEN, message: 'Forbidden.' } }),
   );
 
 @ApiTags('Extra Ingredients Resource')
@@ -45,8 +48,15 @@ export class ExtraIngredientController {
   constructor(private readonly extraIngredientService: ExtraIngredientService) {}
 
   @Post('create')
+  @UseGuards(AuthGuard)
+  @Roles([Role.ADMIN])
   @ApiSecurity('Token')
   @ApiResponse({ status: HttpStatus.OK, standardSchema: createExtraIngredientResponseSchema })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    example: { statusCode: HttpStatus.UNAUTHORIZED, message: 'Not authorized' },
+  })
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, example: { statusCode: HttpStatus.FORBIDDEN, message: 'Forbidden.' } })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, schema: { example: { message: 'Extra ingredient already exist.' } } })
   @ApiOperation({ summary: 'Create new ingredient' })
   async create(
@@ -61,6 +71,7 @@ export class ExtraIngredientController {
   @ApiIngredientErrors()
   @ApiOperation({ summary: 'Update extra ingredient' })
   @UseGuards(AuthGuard)
+  @Roles([Role.ADMIN])
   async update(
     @Body({ schema: updateExtraIngredientSchema }) ingredientDto: UpdateExtraIngredientRequestDto,
     @Param('id', ParseIntPipe) ingredientId: number,
@@ -74,6 +85,7 @@ export class ExtraIngredientController {
   @ApiIngredientErrors()
   @ApiOperation({ summary: 'Delete extra ingredient' })
   @UseGuards(AuthGuard)
+  @Roles([Role.ADMIN])
   async delete(@Param('id', ParseIntPipe) ingredientId: number): Promise<DeleteResult> {
     return await this.extraIngredientService.delete(ingredientId);
   }
