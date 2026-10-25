@@ -52,10 +52,12 @@ describe('ExtraIngredient (e2e)', () => {
     });
 
     it('rejects a non-numeric price', async () => {
-      await request(server)
+      const response = await request(server)
         .post('/extra-ingredient/create')
         .send({ ...newIngredient, price: '30' })
         .expect(400);
+
+      expect(response.body).toMatchObject({ message: ['price must be a number'] });
     });
   });
 

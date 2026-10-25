@@ -1,11 +1,13 @@
 import { AppModule } from '@/app.module';
 import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
+import { SchemaValidationPipe } from '@common/pipes/schema-validation.pipe';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 const bootstrap = async (): Promise<void> => {
   const app = await NestFactory.create(AppModule, { cors: true });
   app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalPipes(new SchemaValidationPipe());
 
   const config = new DocumentBuilder()
     .setTitle('HotBox Pizza API')

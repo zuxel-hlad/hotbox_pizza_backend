@@ -1,5 +1,6 @@
 import { AppModule } from '@/app.module';
 import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
+import { SchemaValidationPipe } from '@common/pipes/schema-validation.pipe';
 import { ACCESS_TOKEN_SECRET } from '@core/config/jwt.config';
 import { MailService } from '@modules/mail/mail.service';
 import { UserEntity } from '@modules/user/user.entity';
@@ -44,6 +45,7 @@ export const createTestApp = async (): Promise<TestApp> => {
 
   const app = moduleRef.createNestApplication<INestApplication<App>>({ logger: false });
   app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalPipes(new SchemaValidationPipe());
   await app.init();
 
   return { app, mailService, repository, resetMocks };

@@ -1,6 +1,6 @@
 # AGENTS.md
 
-HotBox Pizza REST API. NestJS 12 (Express), TypeORM 1.x + PostgreSQL, class-validator, Swagger, TypeScript 6, Node >= 24.9 (`.nvmrc`).
+HotBox Pizza REST API. NestJS 12 (Express), TypeORM 1.x + PostgreSQL, Zod (Standard Schema validation), Swagger, TypeScript 6, Node >= 24.9 (`.nvmrc`).
 Runs on port 3000, Swagger UI at `/docs`.
 
 ## Communication
@@ -16,23 +16,21 @@ npm run build               # nest build -> dist/
 npx tsc --noEmit            # type check
 npm run lint                # eslint --fix
 npm run format              # prettier (also sorts imports)
-npm test                    # unit tests (jest)
-npm run test:e2e            # e2e tests (test/jest-e2e.json)
+npm test                    # unit tests (*.spec.ts)
+npm run test:e2e            # e2e tests (*.e2e-spec.ts)
 
 npm run db:create -- src/core/database/migrations/<PascalCaseName>   # generate migration from entity diff
 npm run db:migrate                                                    # apply migrations
 npm run typeorm -- migration:show                                     # list applied/pending
 ```
 
-Known issue: `npm test` currently fails with "Must use import to load ES Module" for `@nestjs/common` (jest/ESM setup, not your change).
-
 ## Structure
 
 ```
 src/
-  main.ts, app.module.ts          bootstrap, Swagger, global filter; registers every feature module
+  main.ts, app.module.ts          bootstrap, Swagger, global filter and validation pipe; registers every feature module
   common/                         framework-level shared code, no feature logic
-    constants/ decorators/ dto/ filters/ helpers/ types/
+    decorators/ dto/ filters/ helpers/ pipes/ schemas/ types/
   core/                           infrastructure
     config/jwt.config.ts          JWT secrets and TTLs
     database/                     database.config.ts, data-source.ts (TypeORM CLI), migrations/
@@ -70,8 +68,10 @@ Path aliases (tsconfig + jest): `@/*` -> `src/*`, `@common/*`, `@core/*`, `@modu
 - New module: create `src/modules/<feature>/`, follow the `order` layout, register it in `src/app.module.ts`.
 - Use another module's service only if that module `exports` it. For another module's entity, add it to your `TypeOrmModule.forFeature([...])`.
 - Services inject repositories with `@InjectRepository(XEntity)`; complex filtering/paging goes in `<feature>-filters.service.ts` with `createQueryBuilder`.
-- DTOs are classes (never interfaces) with `readonly` fields, class-validator decorators and `@ApiProperty`.
-- Validation is per route: `@UsePipes(new ValidationPipe(validationsSettings))` from `@common/constants/validation.constants`.
+- DTOs are Zod schemas plus inferred types in `dto/*.dto.ts`: `export const createOrderSchema = z.strictObject({...})` and `export type CreateOrderRequestDto = z.infer<typeof createOrderSchema>`. Request schemas use `z.strictObject` (unknown keys -> 400). Derive with `.extend()`, `.partial()`, `.pick()`, `.omit()`. Shared field schemas live in `src/common/schemas/` (`phoneSchema`, `passwordSchema`, `httpUrlSchema`, `emptyAsUndefined`).
+- Validation: `SchemaValidationPipe` (`@common/pipes/schema-validation.pipe`) is global and validates only params with a schema: `@Body({ schema })`, `@Query({ schema })`, `@Body('user', { schema })`. Never `@UsePipes`. Query numbers use `z.coerce.number()`. Import DTO types into controllers as `type` (`import { type XDto, xSchema }`).
+- Error messages are flat strings with the field path (`password should not be empty`, `pizzas.0.count must not be less than 1`), built by `validationErrorMap` in `@common/helpers/validation-error-map.helper`. A message passed to a check (`.min(8, '...')`) overrides it; for `refine` pass `{ params: { constraint: 'must be ...' } }` to get `<field> must be ...`.
+- Swagger reads request schemas from `schema` automatically. Responses: `@ApiResponse({ status, standardSchema: xResponseSchema })`. A named body (`@Body('user', ...)`) is not picked up: add `@ApiBody({ schema: toApiSchema(z.object({ user: xSchema })) })` from `@common/helpers/api-schema.helper`. Response schemas must not contain `.transform()` or `z.date()` (not representable in JSON Schema; use `z.iso.datetime()` for dates).
 - Every endpoint has `@ApiOperation` and `@ApiResponse`; every controller has `@ApiTags`. Protected routes add `@UseGuards(AuthGuard)` and `@ApiSecurity('Token')`.
 - Current user: `@User()` (whole `UserEntity`) or `@User('id')` from `@common/decorators/user.decorator`.
 - Errors: throw `HttpException` or built-in Nest exceptions from services. `HttpExceptionFilter` formats the response.
@@ -81,12 +81,11 @@ Path aliases (tsconfig + jest): `@/*` -> `src/*`, `@common/*`, `@core/*`, `@modu
 Example endpoint (`src/modules/order/order.controller.ts`):
 
 ```ts
-@Get(':id')
-@UsePipes(new ValidationPipe(validationsSettings))
-@ApiResponse({ status: HttpStatus.OK, type: CreateOrderResponseDto })
-@ApiOperation({ summary: 'Find order by id' })
-async findById(@Param('id', ParseIntPipe) orderId: number): Promise<OrderResponse> {
-  return await this.orderService.findById(orderId);
+@Post('create')
+@ApiResponse({ status: HttpStatus.CREATED, standardSchema: createOrderResponseSchema })
+@ApiOperation({ summary: 'Create new order' })
+async create(@Body({ schema: createOrderSchema }) newOrder: CreateOrderRequestDto): Promise<OrderResponse> {
+  return await this.orderService.create(newOrder);
 }
 ```
 
@@ -105,7 +104,7 @@ async findById(@Param('id', ParseIntPipe) orderId: number): Promise<OrderRespons
 
 ## Boundaries
 
-- **Always:** run `npx tsc --noEmit` and `npm run lint` before finishing; follow the `order` module layout; keep Swagger decorators in sync with DTOs.
+- **Always:** run `npx tsc --noEmit` and `npm run lint` before finishing; follow the `order` module layout; keep Swagger decorators in sync with DTO schemas.
 - **Ask first:** adding dependencies; creating or running migrations; changing the auth flow or API response shapes; using `forwardRef` or `@Global()`; renaming routes.
 - **Never:** commit `.env` or secrets; edit already-applied migrations; enable `synchronize: true`; commit or push without an explicit user request; add `Co-Authored-By` or other AI attribution to commits.
 

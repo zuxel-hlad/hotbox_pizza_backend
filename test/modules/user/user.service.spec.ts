@@ -26,9 +26,10 @@ describe('UserService', () => {
     it('rejects an email taken by another user', async () => {
       userRepository.findOne.mockResolvedValueOnce(createUser()).mockResolvedValueOnce({ id: 2 });
 
-      await expect(
-        userService.updateLoggedUser(1, { email: 'taken@x.com', username: 'john' } as never),
-      ).rejects.toMatchObject({ message: 'Email has been taken', status: HttpStatus.UNPROCESSABLE_ENTITY });
+      await expect(userService.updateLoggedUser(1, { email: 'taken@x.com', username: 'john' })).rejects.toMatchObject({
+        message: 'Email has been taken',
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+      });
     });
 
     it('saves the updated fields', async () => {
@@ -38,7 +39,7 @@ describe('UserService', () => {
         email: 'new@x.com',
         username: 'john',
         phone: '+380501234567',
-      } as never);
+      });
 
       expect(user).toMatchObject({ id: 1, email: 'new@x.com', phone: '+380501234567' });
       expect(userRepository.save).toHaveBeenCalledWith(user);
@@ -47,9 +48,10 @@ describe('UserService', () => {
     it('rejects a username taken by another user', async () => {
       userRepository.findOne.mockResolvedValueOnce(createUser()).mockResolvedValueOnce({ id: 2 });
 
-      await expect(
-        userService.updateLoggedUser(1, { email: 'john@x.com', username: 'taken' } as never),
-      ).rejects.toMatchObject({ message: 'Username has been taken', status: HttpStatus.UNPROCESSABLE_ENTITY });
+      await expect(userService.updateLoggedUser(1, { email: 'john@x.com', username: 'taken' })).rejects.toMatchObject({
+        message: 'Username has been taken',
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+      });
       expect(userRepository.findOne).toHaveBeenLastCalledWith(
         expect.objectContaining({ where: expect.objectContaining({ username: 'taken' }) as object }),
       );
@@ -58,7 +60,7 @@ describe('UserService', () => {
     it('skips uniqueness checks for omitted email and username', async () => {
       userRepository.findOne.mockResolvedValueOnce(createUser()).mockResolvedValueOnce({ id: 2 });
 
-      await expect(userService.updateLoggedUser(1, { phone: '+380501234567' } as never)).resolves.toMatchObject({
+      await expect(userService.updateLoggedUser(1, { phone: '+380501234567' })).resolves.toMatchObject({
         email: 'john@x.com',
         phone: '+380501234567',
       });

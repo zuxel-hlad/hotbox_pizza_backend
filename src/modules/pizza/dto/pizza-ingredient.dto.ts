@@ -1,19 +1,7 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { z } from 'zod';
 
-export class PizzaIngredientDto {
-  @IsNumber()
-  @IsOptional()
-  @ApiProperty({ required: false })
-  readonly id: number;
-
-  @IsNotEmpty()
-  @IsString()
-  @ApiProperty()
-  readonly nameEn: string;
-
-  @IsNotEmpty()
-  @IsString()
-  @ApiProperty()
-  readonly nameUa: string;
-}
+export const pizzaIngredientSchema = z.strictObject({
+  id: z.number().optional(),
+  nameEn: z.string().min(1),
+  nameUa: z.string().min(1),
+});

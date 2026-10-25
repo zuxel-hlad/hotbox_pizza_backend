@@ -1,4 +1,3 @@
-import { PagedOrdersRequestDto } from '@modules/order/dto/paged-orders.dto';
 import { OrderFilterService } from '@modules/order/order-filters.service';
 import { OrderEntity } from '@modules/order/order.entity';
 import { createRepositoryMock, RepositoryMock } from '@test/helpers/repository.mock';
@@ -22,7 +21,7 @@ describe('OrderFilterService', () => {
       orderId: 5,
       username: 'john',
       createdAt: '2026-10-09',
-    } as PagedOrdersRequestDto);
+    });
 
     expect(orderRepository.findAndCount).toHaveBeenCalledWith({
       where: {
@@ -48,8 +47,11 @@ describe('OrderFilterService', () => {
   it('returns an empty first page', async () => {
     orderRepository.findAndCount.mockResolvedValue([[], 0]);
 
-    await expect(
-      orderFilterService.getFilteredData({ page: 1, pageSize: 10 } as PagedOrdersRequestDto),
-    ).resolves.toMatchObject({ totalPages: 0, nextPage: false, prevPage: false, content: [] });
+    await expect(orderFilterService.getFilteredData({ page: 1, pageSize: 10 })).resolves.toMatchObject({
+      totalPages: 0,
+      nextPage: false,
+      prevPage: false,
+      content: [],
+    });
   });
 });

@@ -1,20 +1,10 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { passwordSchema } from '@common/schemas/password.schema';
+import { z } from 'zod';
 
-export class VerifyResetPasswordDto {
-  @IsNotEmpty()
-  @IsEmail()
-  @ApiProperty()
-  readonly email: string;
+export const verifyResetPasswordSchema = z.strictObject({
+  email: z.email(),
+  code: z.string().min(1),
+  password: passwordSchema,
+});
 
-  @IsNotEmpty()
-  @ApiProperty()
-  @IsString()
-  readonly code: string;
-
-  @IsNotEmpty()
-  @MinLength(8, { message: 'Password must be more than 8 characters long.' })
-  @ApiProperty()
-  @IsString()
-  readonly password: string;
-}
+export type VerifyResetPasswordDto = z.infer<typeof verifyResetPasswordSchema>;

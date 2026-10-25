@@ -1,27 +1,14 @@
-import { OrderDto } from '@modules/order/dto/order.dto';
-import { ApiProperty } from '@nestjs/swagger';
-import { IsDate, IsInt, IsNumber, IsOptional } from 'class-validator';
+import { orderSchema } from '@modules/order/dto/order.dto';
+import { z } from 'zod';
 
-export class CreateOrderRequestDto extends OrderDto {}
-export class CreateOrderResponseDto extends OrderDto {
-  @IsNumber()
-  @ApiProperty()
-  readonly id: number;
+export const createOrderSchema = orderSchema;
 
-  @IsInt()
-  @ApiProperty()
-  readonly price: number;
+export const createOrderResponseSchema = orderSchema.extend({
+  id: z.number(),
+  price: z.number().int(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+  userId: z.number().nullable(),
+});
 
-  @IsDate()
-  @ApiProperty()
-  readonly createdAt: Date;
-
-  @IsDate()
-  @ApiProperty()
-  readonly updatedAt: Date;
-
-  @IsOptional()
-  @IsNumber()
-  @ApiProperty()
-  readonly userId: number | null;
-}
+export type CreateOrderRequestDto = z.infer<typeof createOrderSchema>;

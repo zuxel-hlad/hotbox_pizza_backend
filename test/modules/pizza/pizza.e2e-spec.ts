@@ -87,6 +87,9 @@ describe('Pizza (e2e)', () => {
     it.each([
       [{ page: 0, pageSize: 10 }, 'The page value must be at least 1.'],
       [{ page: 1, pageSize: 10, price: 'UP' }, 'price must be one of the following values: ASC, DESC'],
+      [{ page: 1, pageSize: 10, priceMin: 0 }, 'The min price value must be at least 1.'],
+      [{ page: 1, pageSize: 10, priceMax: 'abc' }, 'priceMax must be a number'],
+      [{ page: 1, pageSize: 10, size: 'L' }, 'property size should not exist'],
     ])('rejects the query %p', async (query, message) => {
       const response = await request(server).get('/pizza').query(query).expect(400);
 
@@ -151,11 +154,15 @@ describe('Pizza (e2e)', () => {
     it('rejects an invalid image url', async () => {
       authorize();
 
-      await request(server)
+      const response = await request(server)
         .post('/pizza/create')
         .set('Authorization', authHeader)
-        .send({ ...newPizza, imgUrl: 'not-a-url' })
+        .send({ ...newPizza, imgUrl: 'not-a-url', ingredients: [{ nameEn: '', nameUa: 'Томат' }] })
         .expect(400);
+
+      expect(response.body).toMatchObject({
+        message: ['imgUrl must be a URL address', 'ingredients.0.nameEn should not be empty'],
+      });
     });
 
     it('rejects a duplicate', async () => {
