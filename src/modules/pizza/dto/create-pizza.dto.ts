@@ -1,8 +1,12 @@
-import { PizzaDto } from '@modules/pizza/dto/pizza.dto';
-import { ApiProperty } from '@nestjs/swagger';
+import { pizzaSchema } from '@modules/pizza/dto/pizza.dto';
+import { z } from 'zod';
 
-export class CreatePizzaDtoRequest extends PizzaDto {}
-export class CreatePizzaDtoResponse extends PizzaDto {
-  @ApiProperty()
-  readonly favoritesCount: number;
-}
+export const createPizzaSchema = pizzaSchema;
+
+export const createPizzaResponseSchema = pizzaSchema.extend({
+  id: z.number(),
+  imgUrl: z.string(),
+  favoritesCount: z.number(),
+});
+
+export type CreatePizzaDtoRequest = z.infer<typeof createPizzaSchema>;

@@ -1,5 +1,6 @@
 import ormConfig from '@core/database/database.config';
 import { AuthMiddleware } from '@core/middleware/auth.middleware';
+import { AdminModule } from '@modules/admin/admin.module';
 import { AuthModule } from '@modules/auth/auth.module';
 import { ExtraIngredientModule } from '@modules/extra-ingredient/extra-ingredient.module';
 import { OrderModule } from '@modules/order/order.module';
@@ -20,6 +21,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     PizzaModule,
     ExtraIngredientModule,
     OrderModule,
+    AdminModule,
   ],
 })
 export class AppModule {

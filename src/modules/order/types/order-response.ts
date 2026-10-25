@@ -1,3 +1,3 @@
-import { CreateOrderResponseDto } from '@modules/order/dto/create-order.dto';
+import { OrderEntity } from '@modules/order/order.entity';
 
-export interface OrderResponse extends CreateOrderResponseDto {}
+export interface OrderResponse extends OrderEntity {}

@@ -1,29 +1,20 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { Role } from '@common/types/role.enum';
+import { adminResponseSchema } from '@modules/admin/dto/admin-response.dto';
+import { z } from 'zod';
 
-export class UserResponse {
-  @ApiProperty()
-  readonly id: number;
+const clientResponseSchema = z.object({
+  id: z.number(),
+  email: z.string(),
+  username: z.string(),
+  birthDate: z.string(),
+  bonuses: z.number(),
+  image: z.string(),
+  phone: z.string(),
+  role: z.literal(Role.CLIENT),
+});
 
-  @ApiProperty()
-  readonly email: string;
+export const userResponseSchema = z.object({
+  user: z.union([clientResponseSchema, adminResponseSchema]),
+});
 
-  @ApiProperty()
-  readonly username: string;
-
-  @ApiProperty()
-  readonly birthDate: string;
-
-  @ApiProperty()
-  readonly bonuses: number;
-
-  @ApiProperty()
-  readonly image: string;
-
-  @ApiProperty()
-  readonly phone: string;
-}
-
-export class UserResponseDto {
-  @ApiProperty({ type: UserResponse })
-  user: UserResponse;
-}
+export type UserResponseDto = z.infer<typeof userResponseSchema>;

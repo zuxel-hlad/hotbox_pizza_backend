@@ -1,6 +1,9 @@
 import { AppModule } from '@/app.module';
 import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
+import { SchemaValidationPipe } from '@common/pipes/schema-validation.pipe';
+import { Role } from '@common/types/role.enum';
 import { ACCESS_TOKEN_SECRET } from '@core/config/jwt.config';
+import { AdminEntity } from '@modules/admin/admin.entity';
 import { MailService } from '@modules/mail/mail.service';
 import { UserEntity } from '@modules/user/user.entity';
 import { INestApplication } from '@nestjs/common';
@@ -44,6 +47,7 @@ export const createTestApp = async (): Promise<TestApp> => {
 
   const app = moduleRef.createNestApplication<INestApplication<App>>({ logger: false });
   app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalPipes(new SchemaValidationPipe());
   await app.init();
 
   return { app, mailService, repository, resetMocks };
@@ -51,3 +55,6 @@ export const createTestApp = async (): Promise<TestApp> => {
 
 export const createAuthHeader = ({ id, email, username, tokenVersion }: Partial<UserEntity>): string =>
   `Token ${sign({ id, email, username, tokenVersion }, ACCESS_TOKEN_SECRET)}`;
+
+export const createAdminAuthHeader = ({ id, email, tokenVersion }: Partial<AdminEntity>): string =>
+  `Token ${sign({ id, email, tokenVersion, role: Role.ADMIN }, ACCESS_TOKEN_SECRET)}`;

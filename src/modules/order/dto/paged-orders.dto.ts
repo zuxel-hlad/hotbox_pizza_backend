@@ -1,46 +1,20 @@
-import { createPaginationDto, PagedRequestDto } from '@common/dto/paged.dto';
-import { CreateOrderResponseDto } from '@modules/order/dto/create-order.dto';
+import { createPagedSchema, pagedRequestSchema } from '@common/dto/paged.dto';
+import { phoneSchema } from '@common/schemas/phone.schema';
+import { createOrderResponseSchema } from '@modules/order/dto/create-order.dto';
 import { OrderStatus, PaymentType } from '@modules/order/order.constants';
-import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
-import { IsEnum, IsNumber, IsOptional, IsPhoneNumber, IsString } from 'class-validator';
+import { z } from 'zod';
 
-export class PagedOrdersRequestDto extends PagedRequestDto {
-  @IsOptional()
-  @IsNumber()
-  @Transform(({ value }: { value: string }) => Number(value))
-  @ApiProperty({ required: false })
-  readonly userId: number;
+export const pagedOrdersRequestSchema = pagedRequestSchema.extend({
+  userId: z.coerce.number().optional(),
+  adminId: z.coerce.number().optional(),
+  orderId: z.coerce.number().optional(),
+  username: z.string().optional(),
+  primaryPhone: phoneSchema.optional(),
+  status: z.enum(OrderStatus).optional(),
+  paymentType: z.enum(PaymentType).optional(),
+  createdAt: z.iso.date().optional(),
+});
 
-  @IsOptional()
-  @IsNumber()
-  @Transform(({ value }: { value: string }) => Number(value))
-  @ApiProperty({ required: false })
-  readonly orderId: number;
+export const pagedOrdersResponseSchema = createPagedSchema(createOrderResponseSchema);
 
-  @IsOptional()
-  @IsString()
-  @ApiProperty({ required: false })
-  readonly username: string;
-
-  @IsOptional()
-  @IsPhoneNumber('UA')
-  @ApiProperty({ required: false })
-  readonly primaryPhone: string;
-
-  @IsOptional()
-  @IsEnum(OrderStatus)
-  @ApiProperty({ required: false, enum: OrderStatus })
-  readonly status: OrderStatus;
-
-  @IsOptional()
-  @IsEnum(PaymentType)
-  @ApiProperty({ required: false, enum: PaymentType })
-  readonly paymentType: PaymentType;
-
-  @IsOptional()
-  @IsString()
-  @ApiProperty({ required: false })
-  readonly createdAt: string;
-}
-export class PagedOrdersResponseDto extends createPaginationDto(CreateOrderResponseDto) {}
+export type PagedOrdersRequestDto = z.infer<typeof pagedOrdersRequestSchema>;

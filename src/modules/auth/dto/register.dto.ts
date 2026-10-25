@@ -1,25 +1,19 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { passwordSchema } from '@common/schemas/password.schema';
+import { Role } from '@common/types/role.enum';
+import { adminSchema } from '@modules/admin/dto/admin.dto';
+import { z } from 'zod';
 
-export class RegisterDto {
-  @IsNotEmpty()
-  @IsEmail()
-  @ApiProperty()
-  readonly email: string;
+const clientRegisterSchema = z.strictObject({
+  role: z.literal(Role.CLIENT),
+  email: z.email(),
+  username: z.string().min(1),
+  password: passwordSchema,
+});
 
-  @IsNotEmpty()
-  @ApiProperty()
-  @IsString()
-  readonly username: string;
+const adminRegisterSchema = adminSchema.extend({ role: z.literal(Role.ADMIN) });
 
-  @IsNotEmpty()
-  @ApiProperty()
-  @MinLength(8, { message: 'Password must be more than 8 characters long.' })
-  @IsString()
-  readonly password: string;
-}
+export const registerSchema = z.discriminatedUnion('role', [clientRegisterSchema, adminRegisterSchema], {
+  error: `role must be one of the following values: ${Object.values(Role).join(', ')}`,
+});
 
-export class RegisterRequestDto {
-  @ApiProperty()
-  user: RegisterDto;
-}
+export type RegisterDto = z.infer<typeof registerSchema>;

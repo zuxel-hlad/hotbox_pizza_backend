@@ -54,7 +54,17 @@ describe('Token (e2e)', () => {
     expect(response.body).toMatchObject({ message: 'Invalid refresh token' });
   });
 
-  it('rejects a value that is not a JWT', async () => {
-    await request(server).post('/token/renew').send({ token: 'not-a-jwt' }).expect(400);
+  it.each([
+    ['a value that is not a JWT', { token: 'not-a-jwt' }, 'token must be a jwt string'],
+    ['a missing token', {}, 'token should not be empty'],
+    [
+      'an unknown property',
+      { token: sign({ id: 1 }, REFRESH_TOKEN_SECRET), extra: 1 },
+      'property extra should not exist',
+    ],
+  ])('rejects %s', async (_, body, message) => {
+    const response = await request(server).post('/token/renew').send(body).expect(400);
+
+    expect(response.body).toMatchObject({ statusCode: 400, message: [message] });
   });
 });

@@ -1,3 +1,4 @@
+import { Role } from '@common/types/role.enum';
 import { OrderEntity } from '@modules/order/order.entity';
 import { PizzaEntity } from '@modules/pizza/pizza.entity';
 import { hash } from 'bcrypt';
@@ -28,6 +29,9 @@ export class UserEntity {
 
   @Column({ select: false })
   password: string;
+
+  @Column({ type: 'varchar', default: Role.CLIENT })
+  role: Role.CLIENT;
 
   @Column({ default: 0 })
   tokenVersion: number;

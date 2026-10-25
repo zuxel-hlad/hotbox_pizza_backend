@@ -1,23 +1,17 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsJWT } from 'class-validator';
+import { z } from 'zod';
 
-export class TokenDto {
-  @ApiProperty()
-  readonly token: string;
+export const tokenSchema = z.object({
+  token: z.string(),
+  expiresIn: z.number(),
+});
 
-  @ApiProperty()
-  readonly expiresIn: number;
-}
+export const tokenRenewRequestSchema = z.strictObject({
+  token: z.jwt(),
+});
 
-export class TokenRenewRequestDto {
-  @IsJWT()
-  @ApiProperty()
-  readonly token: string;
-}
+export const tokenResponseSchema = z.object({
+  access: tokenSchema,
+  refresh: tokenSchema,
+});
 
-export class TokenResponseDto {
-  @ApiProperty()
-  readonly access: TokenDto;
-  @ApiProperty()
-  readonly refresh: TokenDto;
-}
+export type TokenRenewRequestDto = z.infer<typeof tokenRenewRequestSchema>;

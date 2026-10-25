@@ -1,32 +1,20 @@
-import { CreateExtraIngredientResponseDto } from '@modules/extra-ingredient/dto/create-extra-ingredient.dto';
-import { CreatePizzaDtoResponse } from '@modules/pizza/dto/create-pizza.dto';
-import { PizzaEntity } from '@modules/pizza/pizza.entity';
-import { ApiProperty } from '@nestjs/swagger';
+import { createExtraIngredientResponseSchema } from '@modules/extra-ingredient/dto/create-extra-ingredient.dto';
+import { createPizzaResponseSchema } from '@modules/pizza/dto/create-pizza.dto';
+import { z } from 'zod';
 
-export class OrderResultPizzaDto {
-  @ApiProperty({ type: CreatePizzaDtoResponse })
-  readonly pizza: PizzaEntity;
+const orderResultPizzaSchema = z.object({
+  pizza: createPizzaResponseSchema,
+  extraIngredients: z.array(createExtraIngredientResponseSchema),
+  count: z.number(),
+  cheeseStuffedCrust: z.boolean(),
+  sausageStuffedCrust: z.boolean(),
+});
 
-  @ApiProperty({ type: [CreateExtraIngredientResponseDto] })
-  readonly extraIngredients: CreateExtraIngredientResponseDto[];
+export const createOrderResultSchema = z.object({
+  id: z.number(),
+  pizzas: z.array(orderResultPizzaSchema),
+  price: z.number(),
+});
 
-  @ApiProperty()
-  readonly count: number;
-
-  @ApiProperty()
-  readonly cheeseStuffedCrust: boolean;
-
-  @ApiProperty()
-  readonly sausageStuffedCrust: boolean;
-}
-
-export class CreateOrderResultDto {
-  @ApiProperty()
-  readonly id: number;
-
-  @ApiProperty({ type: [OrderResultPizzaDto] })
-  readonly pizzas: OrderResultPizzaDto[];
-
-  @ApiProperty()
-  readonly price: number;
-}
+export type OrderResultPizzaDto = z.infer<typeof orderResultPizzaSchema>;
+export type CreateOrderResultDto = z.infer<typeof createOrderResultSchema>;

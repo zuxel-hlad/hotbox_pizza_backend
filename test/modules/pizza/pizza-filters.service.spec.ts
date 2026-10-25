@@ -9,7 +9,7 @@ describe('PizzaFiltersService', () => {
   let pizzaFiltersService: PizzaFiltersService;
 
   const getFilteredData = (query: Partial<PagedPizzaRequestDto>) =>
-    pizzaFiltersService.getFilteredData({ page: 1, pageSize: 10, ...query } as PagedPizzaRequestDto);
+    pizzaFiltersService.getFilteredData({ page: 1, pageSize: 10, ...query });
 
   const getSearchParameter = (): string => {
     const [, parameters] = queryBuilder.where.mock.calls[0] as [string, { search: string }];

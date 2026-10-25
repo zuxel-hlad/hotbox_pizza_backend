@@ -1,24 +1,25 @@
-import { PagedRequestDto } from '@common/dto/paged.dto';
-import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
+import { pagedRequestSchema } from '@common/dto/paged.dto';
+import { SchemaValidationPipe } from '@common/pipes/schema-validation.pipe';
+import { BadRequestException } from '@nestjs/common';
 
-describe('PagedRequestDto', () => {
+describe('pagedRequestSchema', () => {
+  const pipe = new SchemaValidationPipe();
+  const validate = (value: unknown) => pipe.transform(value, { type: 'query', schema: pagedRequestSchema });
+
   it('converts query strings to numbers', async () => {
-    const dto = plainToInstance(PagedRequestDto, { page: '2', pageSize: '10' });
-
-    expect(dto).toMatchObject({ page: 2, pageSize: 10 });
-    expect(await validate(dto)).toHaveLength(0);
+    await expect(validate({ page: '2', pageSize: '10' })).resolves.toEqual({ page: 2, pageSize: 10 });
   });
 
   it('rejects a page below 1', async () => {
-    const [error] = await validate(plainToInstance(PagedRequestDto, { page: '0', pageSize: '10' }));
-
-    expect(error.constraints).toEqual({ min: 'The page value must be at least 1.' });
+    await expect(validate({ page: '0', pageSize: '10' })).rejects.toMatchObject({
+      response: { message: ['The page value must be at least 1.'] },
+    });
   });
 
   it('rejects a non-numeric page size', async () => {
-    const [error] = await validate(plainToInstance(PagedRequestDto, { page: '1', pageSize: 'abc' }));
-
-    expect(error.property).toBe('pageSize');
+    await expect(validate({ page: '1', pageSize: 'abc' })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(validate({ page: '1', pageSize: 'abc' })).rejects.toMatchObject({
+      response: { message: ['pageSize must be a number'] },
+    });
   });
 });

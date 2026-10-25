@@ -1,9 +1,19 @@
-import { validationsSettings } from '@common/constants/validation.constants';
+import { Roles } from '@common/decorators/roles.decorator';
 import { User } from '@common/decorators/user.decorator';
+import { Role } from '@common/types/role.enum';
 import { AuthGuard } from '@core/guards/auth.guard';
-import { CreatePizzaDtoRequest, CreatePizzaDtoResponse } from '@modules/pizza/dto/create-pizza.dto';
-import { PagedPizzaRequestDto, PagedPizzaResponseDto, PizzaResponseDto } from '@modules/pizza/dto/paged-pizza.dto';
-import { UpdatePizzaDtoRequest } from '@modules/pizza/dto/update-pizza.dto';
+import {
+  type CreatePizzaDtoRequest,
+  createPizzaResponseSchema,
+  createPizzaSchema,
+} from '@modules/pizza/dto/create-pizza.dto';
+import {
+  type PagedPizzaRequestDto,
+  pagedPizzaRequestSchema,
+  pagedPizzaResponseSchema,
+  pizzaResponseSchema,
+} from '@modules/pizza/dto/paged-pizza.dto';
+import { type UpdatePizzaDtoRequest, updatePizzaSchema } from '@modules/pizza/dto/update-pizza.dto';
 import { PizzaEntity } from '@modules/pizza/pizza.entity';
 import { PizzaService } from '@modules/pizza/pizza.service';
 import { PagedPizzaResponse } from '@modules/pizza/types/paged-pizza-response.interface';
@@ -20,11 +30,10 @@ import {
   Put,
   Query,
   UseGuards,
-  UsePipes,
-  ValidationPipe,
 } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { DeleteResult } from 'typeorm';
+import { z } from 'zod';
 
 @ApiTags('Pizza resource')
 @Controller('pizza')
@@ -33,8 +42,10 @@ export class PizzaController {
 
   @Get('favorite')
   @UseGuards(AuthGuard)
+  @Roles([Role.CLIENT])
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, example: { statusCode: HttpStatus.FORBIDDEN, message: 'Forbidden.' } })
   @ApiSecurity('Token')
-  @ApiResponse({ status: HttpStatus.OK, type: PizzaResponseDto })
+  @ApiResponse({ status: HttpStatus.OK, standardSchema: z.array(pizzaResponseSchema) })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, example: { statusCode: HttpStatus.NOT_FOUND, message: 'Not found' } })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
@@ -46,7 +57,7 @@ export class PizzaController {
   }
 
   @Get(':id')
-  @ApiResponse({ status: HttpStatus.OK, type: CreatePizzaDtoResponse })
+  @ApiResponse({ status: HttpStatus.OK, standardSchema: createPizzaResponseSchema })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     example: { statusCode: HttpStatus.NOT_FOUND, message: 'Not found' },
@@ -57,19 +68,21 @@ export class PizzaController {
   }
 
   @Get()
-  @UsePipes(new ValidationPipe(validationsSettings))
-  @ApiResponse({ status: HttpStatus.OK, type: PagedPizzaResponseDto, isArray: true })
+  @ApiResponse({ status: HttpStatus.OK, standardSchema: pagedPizzaResponseSchema })
   @ApiOperation({ summary: 'Get pizza paged' })
-  async findAll(@User('id') userId: number, @Query() query: PagedPizzaRequestDto): Promise<PagedPizzaResponse> {
+  async findAll(
+    @User('id') userId: number,
+    @Query({ schema: pagedPizzaRequestSchema }) query: PagedPizzaRequestDto,
+  ): Promise<PagedPizzaResponse> {
     return await this.pizzaService.findAll(userId, query);
   }
 
   @Post('create')
   @UseGuards(AuthGuard)
-  @UsePipes(new ValidationPipe(validationsSettings))
+  @Roles([Role.ADMIN])
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, example: { statusCode: HttpStatus.FORBIDDEN, message: 'Forbidden.' } })
   @ApiSecurity('Token')
-  @ApiBody({ type: CreatePizzaDtoRequest })
-  @ApiResponse({ status: HttpStatus.CREATED, type: CreatePizzaDtoResponse })
+  @ApiResponse({ status: HttpStatus.CREATED, standardSchema: createPizzaResponseSchema })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
     example: { statusCode: HttpStatus.UNAUTHORIZED, message: 'Not authorized' },
@@ -79,26 +92,32 @@ export class PizzaController {
     example: { statusCode: HttpStatus.CONFLICT, message: 'Pizza with "PizzaNameEn" and "PizzaNameUa" already exist.' },
   })
   @ApiOperation({ summary: 'Create new pizza' })
-  async create(@Body() createPizzaDto: CreatePizzaDtoRequest): Promise<PizzaEntity> {
+  async create(@Body({ schema: createPizzaSchema }) createPizzaDto: CreatePizzaDtoRequest): Promise<PizzaEntity> {
     return await this.pizzaService.create(createPizzaDto);
   }
 
   @Put('update/:id')
   @UseGuards(AuthGuard)
-  @UsePipes(new ValidationPipe(validationsSettings))
+  @Roles([Role.ADMIN])
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, example: { statusCode: HttpStatus.FORBIDDEN, message: 'Forbidden.' } })
   @ApiSecurity('Token')
-  @ApiBody({ type: UpdatePizzaDtoRequest })
-  @ApiResponse({ status: HttpStatus.OK, type: CreatePizzaDtoResponse })
+  @ApiResponse({ status: HttpStatus.OK, standardSchema: createPizzaResponseSchema })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
     example: { statusCode: HttpStatus.UNAUTHORIZED, message: 'Not authorized' },
   })
   @ApiOperation({ summary: 'Update single pizza' })
-  async update(@Body() updateDto: UpdatePizzaDtoRequest, @Param('id', ParseIntPipe) id: number): Promise<PizzaEntity> {
+  async update(
+    @Body({ schema: updatePizzaSchema }) updateDto: UpdatePizzaDtoRequest,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<PizzaEntity> {
     return await this.pizzaService.update(updateDto, id);
   }
 
   @Delete('delete/:id')
+  @UseGuards(AuthGuard)
+  @Roles([Role.ADMIN])
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, example: { statusCode: HttpStatus.FORBIDDEN, message: 'Forbidden.' } })
   @ApiSecurity('Token')
   @ApiResponse({ status: HttpStatus.NO_CONTENT })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, example: { statusCode: HttpStatus.NOT_FOUND, message: 'Not found' } })
@@ -113,8 +132,10 @@ export class PizzaController {
 
   @Put('toggle/favorite/:id')
   @UseGuards(AuthGuard)
+  @Roles([Role.CLIENT])
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, example: { statusCode: HttpStatus.FORBIDDEN, message: 'Forbidden.' } })
   @ApiSecurity('Token')
-  @ApiResponse({ status: HttpStatus.OK, type: CreatePizzaDtoResponse })
+  @ApiResponse({ status: HttpStatus.OK, standardSchema: createPizzaResponseSchema })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Bad request' })
   @ApiOperation({ summary: 'Toggle favorite pizza' })

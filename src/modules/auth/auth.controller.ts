@@ -1,17 +1,25 @@
-import { validationsSettings } from '@common/constants/validation.constants';
+import { Admin } from '@common/decorators/admin.decorator';
 import { User } from '@common/decorators/user.decorator';
+import { toApiSchema } from '@common/helpers/api-schema.helper';
 import { AuthGuard } from '@core/guards/auth.guard';
+import { AdminEntity } from '@modules/admin/admin.entity';
 import { AuthService } from '@modules/auth/auth.service';
-import { ChangePasswordDto, ChangePasswordRequestDto } from '@modules/auth/dto/change-password.dto';
-import { LoginDto, LoginRequestDto } from '@modules/auth/dto/login.dto';
-import { RegisterDto, RegisterRequestDto } from '@modules/auth/dto/register.dto';
-import { ResetPasswordDto, ResetPasswordResponseDto } from '@modules/auth/dto/reset-password.dto';
-import { VerifyResetPasswordDto } from '@modules/auth/dto/verify-reset-password.dto';
+import { type ChangePasswordDto, changePasswordSchema } from '@modules/auth/dto/change-password.dto';
+import { type LoginDto, loginSchema } from '@modules/auth/dto/login.dto';
+import { type RegisterDto, registerSchema } from '@modules/auth/dto/register.dto';
+import {
+  type ResetPasswordDto,
+  resetPasswordResponseSchema,
+  resetPasswordSchema,
+} from '@modules/auth/dto/reset-password.dto';
+import { type VerifyResetPasswordDto, verifyResetPasswordSchema } from '@modules/auth/dto/verify-reset-password.dto';
 import { AuthResponse } from '@modules/auth/types/auth-response.interface';
 import { ResetPasswordCodeResponse } from '@modules/auth/types/reset-password-code-response.interface';
-import { TokenResponseDto } from '@modules/token/dto/token-response.dto';
-import { Body, Controller, HttpStatus, Post, Put, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
+import { tokenResponseSchema } from '@modules/token/dto/token-response.dto';
+import { UserEntity } from '@modules/user/user.entity';
+import { Body, Controller, HttpStatus, Post, Put, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { z } from 'zod';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -19,10 +27,9 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  @UsePipes(new ValidationPipe(validationsSettings))
-  @ApiBody({ type: RegisterRequestDto })
-  @ApiOperation({ summary: 'Register new user' })
-  @ApiResponse({ status: HttpStatus.OK, type: TokenResponseDto })
+  @ApiBody({ schema: toApiSchema(z.object({ user: registerSchema })) })
+  @ApiOperation({ summary: 'Register new client or admin' })
+  @ApiResponse({ status: HttpStatus.OK, standardSchema: tokenResponseSchema })
   @ApiResponse({
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     description: 'Validation errors',
@@ -34,30 +41,28 @@ export class AuthController {
       },
     },
   })
-  async register(@Body('user') registerDto: RegisterDto): Promise<AuthResponse> {
-    const newUser = await this.authService.register(registerDto);
+  async register(@Body('user', { schema: registerSchema }) registerDto: RegisterDto): Promise<AuthResponse> {
+    const account = await this.authService.register(registerDto);
 
-    return this.authService.buildAuthResponse(newUser);
+    return this.authService.buildAuthResponse(account);
   }
 
   @Post('login')
-  @UsePipes(new ValidationPipe(validationsSettings))
-  @ApiBody({ type: LoginRequestDto })
-  @ApiResponse({ status: HttpStatus.OK, type: TokenResponseDto })
+  @ApiBody({ schema: toApiSchema(z.object({ user: loginSchema })) })
+  @ApiResponse({ status: HttpStatus.OK, standardSchema: tokenResponseSchema })
   @ApiResponse({ status: HttpStatus.UNPROCESSABLE_ENTITY, description: 'Invalid credentials' })
   @ApiOperation({ summary: 'Login user' })
-  async login(@Body('user') LoginDto: LoginDto): Promise<AuthResponse> {
-    const loggedUser = await this.authService.login(LoginDto);
+  async login(@Body('user', { schema: loginSchema }) loginDto: LoginDto): Promise<AuthResponse> {
+    const loggedUser = await this.authService.login(loginDto);
 
     return this.authService.buildAuthResponse(loggedUser);
   }
 
   @Put('password/change')
   @UseGuards(AuthGuard)
-  @UsePipes(new ValidationPipe(validationsSettings))
   @ApiSecurity('Token')
-  @ApiBody({ type: ChangePasswordRequestDto })
-  @ApiResponse({ status: HttpStatus.OK, type: TokenResponseDto })
+  @ApiBody({ schema: toApiSchema(z.object({ password: changePasswordSchema })) })
+  @ApiResponse({ status: HttpStatus.OK, standardSchema: tokenResponseSchema })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'User not found' })
   @ApiResponse({
     status: HttpStatus.UNPROCESSABLE_ENTITY,
@@ -72,17 +77,17 @@ export class AuthController {
   })
   @ApiOperation({ summary: 'Change user password' })
   async changePassword(
-    @Body('password') password: ChangePasswordDto,
-    @User('id') userId: number,
+    @Body('password', { schema: changePasswordSchema }) password: ChangePasswordDto,
+    @User() user: UserEntity,
+    @Admin() admin: AdminEntity,
   ): Promise<AuthResponse> {
-    const user = await this.authService.changePassword(password, userId);
+    const account = await this.authService.changePassword(password, admin ?? user);
 
-    return this.authService.buildAuthResponse(user);
+    return this.authService.buildAuthResponse(account);
   }
 
   @Post('password/reset/send-otp')
-  @UsePipes(new ValidationPipe(validationsSettings))
-  @ApiResponse({ status: HttpStatus.OK, type: ResetPasswordResponseDto })
+  @ApiResponse({ status: HttpStatus.OK, standardSchema: resetPasswordResponseSchema })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'User not found' })
   @ApiResponse({
     schema: {
@@ -93,13 +98,14 @@ export class AuthController {
     },
   })
   @ApiOperation({ summary: 'Reset user password' })
-  async sendResetPasswordCode(@Body() resetPasswordDto: ResetPasswordDto): Promise<ResetPasswordCodeResponse> {
+  async sendResetPasswordCode(
+    @Body({ schema: resetPasswordSchema }) resetPasswordDto: ResetPasswordDto,
+  ): Promise<ResetPasswordCodeResponse> {
     return this.authService.sendResetPasswordCode(resetPasswordDto);
   }
 
   @Post('password/reset/verify-otp')
-  @UsePipes(new ValidationPipe(validationsSettings))
-  @ApiResponse({ status: HttpStatus.OK, type: TokenResponseDto })
+  @ApiResponse({ status: HttpStatus.OK, standardSchema: tokenResponseSchema })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'User not found' })
   @ApiResponse({
     schema: {
@@ -110,7 +116,9 @@ export class AuthController {
     },
   })
   @ApiOperation({ summary: 'Verify reset password code' })
-  async verifyResetPasswordCode(@Body() verifyResetPasswordDto: VerifyResetPasswordDto): Promise<AuthResponse> {
+  async verifyResetPasswordCode(
+    @Body({ schema: verifyResetPasswordSchema }) verifyResetPasswordDto: VerifyResetPasswordDto,
+  ): Promise<AuthResponse> {
     const user = await this.authService.verifyResetPasswordCode(verifyResetPasswordDto);
     return this.authService.buildAuthResponse(user);
   }
