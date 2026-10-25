@@ -113,6 +113,19 @@ describe('Order (e2e)', () => {
       expect(userRepository.save).toHaveBeenCalledWith(expect.objectContaining({ bonuses: 250 }));
     });
 
+    it('ignores a foreign user id sent by a client', async () => {
+      userRepository.findOne.mockResolvedValueOnce(user).mockResolvedValueOnce({ ...user });
+
+      const response = await request(server)
+        .post('/order/create')
+        .set('Authorization', createAuthHeader(user))
+        .send({ ...newOrder, userId: 99 })
+        .expect(201);
+
+      expect(response.body).toMatchObject({ userId: 1, adminId: null });
+      expect(userRepository.findOne).toHaveBeenLastCalledWith({ where: { id: 1 } });
+    });
+
     it('defaults a missing comment to an empty string', async () => {
       const response = await request(server)
         .post('/order/create')

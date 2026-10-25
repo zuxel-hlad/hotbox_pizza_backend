@@ -1,3 +1,5 @@
+import { AdminService } from '@modules/admin/admin.service';
+import { Account } from '@modules/auth/types/account.type';
 import { UpdateUserDto } from '@modules/user/dto/update-user.dto';
 import { UserResponseDto } from '@modules/user/dto/user-response.dto';
 import { UserEntity } from '@modules/user/user.entity';
@@ -7,17 +9,16 @@ import { FindOptionsWhere, Repository } from 'typeorm';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectRepository(UserEntity) private readonly userRepository: Repository<UserEntity>) {}
+  constructor(
+    @InjectRepository(UserEntity) private readonly userRepository: Repository<UserEntity>,
+    private readonly adminService: AdminService,
+  ) {}
 
   async updateLoggedUser(userId: number, updateUserDto: UpdateUserDto): Promise<UserEntity> {
     const user = await this.findCurrentUser({ id: userId });
 
     if (updateUserDto.email && updateUserDto.email !== user.email) {
-      const isEmailExist = await this.findCurrentUser({ email: updateUserDto.email });
-
-      if (isEmailExist) {
-        throw new HttpException('Email has been taken', HttpStatus.UNPROCESSABLE_ENTITY);
-      }
+      await this.adminService.ensureEmailIsFree(updateUserDto.email);
     }
 
     if (updateUserDto.username && updateUserDto.username !== user.username) {
@@ -36,10 +37,10 @@ export class UserService {
     return this.userRepository.findOne({ where });
   }
 
-  buildUserResponse(user: UserEntity): UserResponseDto {
-    delete user.password;
-    delete user.tokenVersion;
+  buildUserResponse(account: Account): UserResponseDto {
+    delete account.password;
+    delete account.tokenVersion;
 
-    return { user };
+    return { user: account };
   }
 }

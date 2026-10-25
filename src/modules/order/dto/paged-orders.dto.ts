@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 export const pagedOrdersRequestSchema = pagedRequestSchema.extend({
   userId: z.coerce.number().optional(),
+  adminId: z.coerce.number().optional(),
   orderId: z.coerce.number().optional(),
   username: z.string().optional(),
   primaryPhone: phoneSchema.optional(),

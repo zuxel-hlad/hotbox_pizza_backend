@@ -1,6 +1,8 @@
+import { Admin } from '@common/decorators/admin.decorator';
 import { User } from '@common/decorators/user.decorator';
 import { toApiSchema } from '@common/helpers/api-schema.helper';
 import { AuthGuard } from '@core/guards/auth.guard';
+import { AdminEntity } from '@modules/admin/admin.entity';
 import { AuthService } from '@modules/auth/auth.service';
 import { type ChangePasswordDto, changePasswordSchema } from '@modules/auth/dto/change-password.dto';
 import { type LoginDto, loginSchema } from '@modules/auth/dto/login.dto';
@@ -14,6 +16,7 @@ import { type VerifyResetPasswordDto, verifyResetPasswordSchema } from '@modules
 import { AuthResponse } from '@modules/auth/types/auth-response.interface';
 import { ResetPasswordCodeResponse } from '@modules/auth/types/reset-password-code-response.interface';
 import { tokenResponseSchema } from '@modules/token/dto/token-response.dto';
+import { UserEntity } from '@modules/user/user.entity';
 import { Body, Controller, HttpStatus, Post, Put, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
@@ -25,7 +28,7 @@ export class AuthController {
 
   @Post('register')
   @ApiBody({ schema: toApiSchema(z.object({ user: registerSchema })) })
-  @ApiOperation({ summary: 'Register new user' })
+  @ApiOperation({ summary: 'Register new client or admin' })
   @ApiResponse({ status: HttpStatus.OK, standardSchema: tokenResponseSchema })
   @ApiResponse({
     status: HttpStatus.UNPROCESSABLE_ENTITY,
@@ -39,9 +42,9 @@ export class AuthController {
     },
   })
   async register(@Body('user', { schema: registerSchema }) registerDto: RegisterDto): Promise<AuthResponse> {
-    const newUser = await this.authService.register(registerDto);
+    const account = await this.authService.register(registerDto);
 
-    return this.authService.buildAuthResponse(newUser);
+    return this.authService.buildAuthResponse(account);
   }
 
   @Post('login')
@@ -75,11 +78,12 @@ export class AuthController {
   @ApiOperation({ summary: 'Change user password' })
   async changePassword(
     @Body('password', { schema: changePasswordSchema }) password: ChangePasswordDto,
-    @User('id') userId: number,
+    @User() user: UserEntity,
+    @Admin() admin: AdminEntity,
   ): Promise<AuthResponse> {
-    const user = await this.authService.changePassword(password, userId);
+    const account = await this.authService.changePassword(password, admin ?? user);
 
-    return this.authService.buildAuthResponse(user);
+    return this.authService.buildAuthResponse(account);
   }
 
   @Post('password/reset/send-otp')

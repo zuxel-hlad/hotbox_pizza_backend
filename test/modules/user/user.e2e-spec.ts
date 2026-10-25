@@ -116,10 +116,8 @@ describe('User (e2e)', () => {
     });
 
     it('rejects a taken email', async () => {
-      userRepository.findOne
-        .mockResolvedValueOnce({ ...user })
-        .mockResolvedValueOnce({ ...user })
-        .mockResolvedValueOnce({ id: 2 });
+      userRepository.findOne.mockResolvedValueOnce({ ...user }).mockResolvedValueOnce({ ...user });
+      userRepository.existsBy.mockResolvedValue(true);
 
       const response = await request(server)
         .put('/user/update')

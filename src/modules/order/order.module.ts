@@ -1,3 +1,4 @@
+import { AdminEntity } from '@modules/admin/admin.entity';
 import { ExtraIngredientEntity } from '@modules/extra-ingredient/extra-ingredient.entity';
 import { OrderFilterService } from '@modules/order/order-filters.service';
 import { OrderController } from '@modules/order/order.controller';
@@ -9,7 +10,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([OrderEntity, UserEntity, PizzaEntity, ExtraIngredientEntity])],
+  imports: [TypeOrmModule.forFeature([OrderEntity, AdminEntity, UserEntity, PizzaEntity, ExtraIngredientEntity])],
   controllers: [OrderController],
   providers: [OrderService, OrderFilterService],
 })

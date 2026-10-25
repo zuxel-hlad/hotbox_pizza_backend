@@ -1,8 +1,9 @@
+import { AdminEntity } from '@modules/admin/admin.entity';
 import { PizzaEntity } from '@modules/pizza/pizza.entity';
 import { UserEntity } from '@modules/user/user.entity';
 import { createQueryBuilderMock } from '@test/helpers/query-builder.mock';
 import { RepositoryMock } from '@test/helpers/repository.mock';
-import { createAuthHeader, createTestApp, TestApp } from '@test/helpers/test-app.helper';
+import { createAdminAuthHeader, createAuthHeader, createTestApp, TestApp } from '@test/helpers/test-app.helper';
 import { createTransactionManagerMock, TransactionManagerMock } from '@test/helpers/transaction-manager.mock';
 import request from 'supertest';
 import { App } from 'supertest/types';
@@ -10,6 +11,8 @@ import { App } from 'supertest/types';
 describe('Pizza (e2e)', () => {
   const user = { id: 1, email: 'john@x.com', username: 'john', tokenVersion: 0 };
   const authHeader = createAuthHeader(user);
+  const admin = { id: 5, email: 'admin@x.com', tokenVersion: 0 };
+  const adminAuthHeader = createAdminAuthHeader(admin);
   const pizza = { id: 1, nameEn: 'Margherita', nameUa: 'Маргарита', price: 200, calories: 800, favoritesCount: 0 };
   const newPizza = {
     imgUrl: 'https://x.com/pizza.png',
@@ -25,6 +28,7 @@ describe('Pizza (e2e)', () => {
   let userRepository: RepositoryMock;
 
   const authorize = () => userRepository.findOne.mockResolvedValueOnce(user);
+  const authorizeAdmin = () => testApp.repository(AdminEntity).findOne.mockResolvedValueOnce(admin);
 
   beforeAll(async () => {
     testApp = await createTestApp();
@@ -135,13 +139,20 @@ describe('Pizza (e2e)', () => {
       await request(server).post('/pizza/create').send(newPizza).expect(401);
     });
 
-    it('creates a pizza', async () => {
+    it('rejects a client', async () => {
       authorize();
+
+      await request(server).post('/pizza/create').set('Authorization', authHeader).send(newPizza).expect(403);
+      expect(pizzaRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('creates a pizza', async () => {
+      authorizeAdmin();
       pizzaRepository.existsBy.mockResolvedValue(false);
 
       const response = await request(server)
         .post('/pizza/create')
-        .set('Authorization', authHeader)
+        .set('Authorization', adminAuthHeader)
         .send(newPizza)
         .expect(201);
 
@@ -152,11 +163,11 @@ describe('Pizza (e2e)', () => {
     });
 
     it('rejects an invalid image url', async () => {
-      authorize();
+      authorizeAdmin();
 
       const response = await request(server)
         .post('/pizza/create')
-        .set('Authorization', authHeader)
+        .set('Authorization', adminAuthHeader)
         .send({ ...newPizza, imgUrl: 'not-a-url', ingredients: [{ nameEn: '', nameUa: 'Томат' }] })
         .expect(400);
 
@@ -166,10 +177,10 @@ describe('Pizza (e2e)', () => {
     });
 
     it('rejects a duplicate', async () => {
-      authorize();
+      authorizeAdmin();
       pizzaRepository.existsBy.mockResolvedValue(true);
 
-      await request(server).post('/pizza/create').set('Authorization', authHeader).send(newPizza).expect(409);
+      await request(server).post('/pizza/create').set('Authorization', adminAuthHeader).send(newPizza).expect(409);
     });
   });
 
@@ -179,12 +190,12 @@ describe('Pizza (e2e)', () => {
     });
 
     it('updates a pizza', async () => {
-      authorize();
+      authorizeAdmin();
       pizzaRepository.findOne.mockResolvedValue({ ...pizza });
 
       await request(server)
         .put('/pizza/update/1')
-        .set('Authorization', authHeader)
+        .set('Authorization', adminAuthHeader)
         .send({ price: 250 })
         .expect(200, { ...pizza, price: 250 });
     });
@@ -220,16 +231,32 @@ describe('Pizza (e2e)', () => {
   });
 
   describe('DELETE /pizza/delete/:id', () => {
-    it('deletes a pizza without authorization (known gap)', async () => {
+    it('requires authorization', async () => {
+      await request(server).delete('/pizza/delete/1').expect(401);
+    });
+
+    it('rejects a client', async () => {
+      authorize();
+
+      await request(server).delete('/pizza/delete/1').set('Authorization', authHeader).expect(403);
+      expect(pizzaRepository.delete).not.toHaveBeenCalled();
+    });
+
+    it('deletes a pizza', async () => {
+      authorizeAdmin();
       pizzaRepository.delete.mockResolvedValue({ raw: [], affected: 1 });
 
-      await request(server).delete('/pizza/delete/1').expect(200, { raw: [], affected: 1 });
+      await request(server)
+        .delete('/pizza/delete/1')
+        .set('Authorization', adminAuthHeader)
+        .expect(200, { raw: [], affected: 1 });
     });
 
     it('responds 404 for an unknown pizza', async () => {
+      authorizeAdmin();
       pizzaRepository.delete.mockResolvedValue({ raw: [], affected: 0 });
 
-      await request(server).delete('/pizza/delete/1').expect(404);
+      await request(server).delete('/pizza/delete/1').set('Authorization', adminAuthHeader).expect(404);
     });
   });
 });

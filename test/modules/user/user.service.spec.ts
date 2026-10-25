@@ -1,12 +1,14 @@
+import { AdminService } from '@modules/admin/admin.service';
 import { UserResponseDto } from '@modules/user/dto/user-response.dto';
 import { UserEntity } from '@modules/user/user.entity';
 import { UserService } from '@modules/user/user.service';
-import { HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus } from '@nestjs/common';
 import { createRepositoryMock, RepositoryMock } from '@test/helpers/repository.mock';
 import { Repository } from 'typeorm';
 
 describe('UserService', () => {
   let userRepository: RepositoryMock;
+  const adminService = { ensureEmailIsFree: jest.fn() };
   let userService: UserService;
 
   const createUser = (): UserEntity =>
@@ -19,21 +21,29 @@ describe('UserService', () => {
 
   beforeEach(() => {
     userRepository = createRepositoryMock();
-    userService = new UserService(userRepository as unknown as Repository<UserEntity>);
+    adminService.ensureEmailIsFree.mockReset();
+    userService = new UserService(
+      userRepository as unknown as Repository<UserEntity>,
+      adminService as unknown as AdminService,
+    );
   });
 
   describe('updateLoggedUser', () => {
-    it('rejects an email taken by another user', async () => {
-      userRepository.findOne.mockResolvedValueOnce(createUser()).mockResolvedValueOnce({ id: 2 });
+    it('rejects a taken email', async () => {
+      userRepository.findOne.mockResolvedValue(createUser());
+      adminService.ensureEmailIsFree.mockRejectedValue(
+        new HttpException('Email has been taken', HttpStatus.UNPROCESSABLE_ENTITY),
+      );
 
       await expect(userService.updateLoggedUser(1, { email: 'taken@x.com', username: 'john' })).rejects.toMatchObject({
         message: 'Email has been taken',
         status: HttpStatus.UNPROCESSABLE_ENTITY,
       });
+      expect(userRepository.save).not.toHaveBeenCalled();
     });
 
     it('saves the updated fields', async () => {
-      userRepository.findOne.mockResolvedValueOnce(createUser()).mockResolvedValueOnce(null);
+      userRepository.findOne.mockResolvedValue(createUser());
 
       const user = await userService.updateLoggedUser(1, {
         email: 'new@x.com',
@@ -41,6 +51,7 @@ describe('UserService', () => {
         phone: '+380501234567',
       });
 
+      expect(adminService.ensureEmailIsFree).toHaveBeenCalledWith('new@x.com');
       expect(user).toMatchObject({ id: 1, email: 'new@x.com', phone: '+380501234567' });
       expect(userRepository.save).toHaveBeenCalledWith(user);
     });

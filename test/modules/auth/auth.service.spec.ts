@@ -1,13 +1,16 @@
+import { Role } from '@common/types/role.enum';
 import {
   ACCESS_TOKEN_SECRET,
   ACCESS_TOKEN_TTL,
   REFRESH_TOKEN_SECRET,
   REFRESH_TOKEN_TTL,
 } from '@core/config/jwt.config';
+import { AdminEntity } from '@modules/admin/admin.entity';
+import { AdminService } from '@modules/admin/admin.service';
 import { AuthService } from '@modules/auth/auth.service';
 import { MailService } from '@modules/mail/mail.service';
 import { UserEntity } from '@modules/user/user.entity';
-import { HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus } from '@nestjs/common';
 import { createRepositoryMock, RepositoryMock } from '@test/helpers/repository.mock';
 import { compare, hash } from 'bcrypt';
 import { JwtPayload, sign, verify } from 'jsonwebtoken';
@@ -16,8 +19,10 @@ import { Repository } from 'typeorm';
 describe('AuthService', () => {
   const password = 'password123';
   const mailService = { sendResetCode: jest.fn() };
+  const adminService = { ensureEmailIsFree: jest.fn() };
   let passwordHash: string;
   let userRepository: RepositoryMock;
+  let adminRepository: RepositoryMock;
   let authService: AuthService;
 
   const createUser = (fields: Partial<UserEntity> = {}): UserEntity =>
@@ -30,24 +35,40 @@ describe('AuthService', () => {
       ...fields,
     });
 
+  const createAdmin = (fields: Partial<AdminEntity> = {}): AdminEntity =>
+    Object.assign(new AdminEntity(), {
+      id: 5,
+      email: 'admin@x.com',
+      role: Role.ADMIN,
+      tokenVersion: 0,
+      password: passwordHash,
+      ...fields,
+    });
+
   beforeAll(async () => {
     passwordHash = await hash(password, 4);
   });
 
   beforeEach(() => {
     userRepository = createRepositoryMock();
+    adminRepository = createRepositoryMock();
     mailService.sendResetCode.mockReset();
+    adminService.ensureEmailIsFree.mockReset();
     authService = new AuthService(
       userRepository as unknown as Repository<UserEntity>,
+      adminRepository as unknown as Repository<AdminEntity>,
       mailService as unknown as MailService,
+      adminService as unknown as AdminService,
     );
   });
 
   describe('register', () => {
-    const registerDto = { email: 'john@x.com', username: 'john', password };
+    const registerDto = { role: Role.CLIENT as const, email: 'john@x.com', username: 'john', password };
 
     it('rejects a taken email', async () => {
-      userRepository.findOne.mockResolvedValueOnce(createUser()).mockResolvedValueOnce(null);
+      adminService.ensureEmailIsFree.mockRejectedValue(
+        new HttpException('Email has been taken', HttpStatus.UNPROCESSABLE_ENTITY),
+      );
 
       await expect(authService.register(registerDto)).rejects.toMatchObject({
         message: 'Email has been taken',
@@ -56,7 +77,7 @@ describe('AuthService', () => {
     });
 
     it('rejects a taken username', async () => {
-      userRepository.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce(createUser());
+      userRepository.findOne.mockResolvedValue(createUser());
 
       await expect(authService.register(registerDto)).rejects.toMatchObject({
         message: 'Username has been taken',
@@ -72,6 +93,25 @@ describe('AuthService', () => {
       expect(user).toBeInstanceOf(UserEntity);
       expect(user).toMatchObject(registerDto);
       expect(userRepository.save).toHaveBeenCalledWith(user);
+    });
+
+    it('saves a new admin without the username check', async () => {
+      const adminDto = {
+        role: Role.ADMIN as const,
+        firstName: 'Ann',
+        lastName: 'Lee',
+        phone: '+380501234567',
+        email: 'admin@x.com',
+        password,
+      };
+      const admin = await authService.register(adminDto);
+
+      expect(admin).toBeInstanceOf(AdminEntity);
+      expect(admin).toMatchObject(adminDto);
+      expect(adminRepository.save).toHaveBeenCalledWith(admin);
+      expect(adminService.ensureEmailIsFree).toHaveBeenCalledWith('admin@x.com');
+      expect(userRepository.findOne).not.toHaveBeenCalled();
+      expect(userRepository.save).not.toHaveBeenCalled();
     });
   });
 
@@ -102,6 +142,14 @@ describe('AuthService', () => {
 
       await expect(authService.login(loginDto)).resolves.toBe(user);
     });
+
+    it('returns the admin before looking up users', async () => {
+      const admin = createAdmin();
+      adminRepository.findOne.mockResolvedValue(admin);
+
+      await expect(authService.login({ email: 'admin@x.com', password })).resolves.toBe(admin);
+      expect(userRepository.findOne).not.toHaveBeenCalled();
+    });
   });
 
   describe('changePassword', () => {
@@ -110,7 +158,9 @@ describe('AuthService', () => {
     it('rejects an unknown user', async () => {
       userRepository.findOne.mockResolvedValue(null);
 
-      await expect(authService.changePassword({ oldPassword: password, newPassword }, 1)).rejects.toMatchObject({
+      await expect(
+        authService.changePassword({ oldPassword: password, newPassword }, createUser()),
+      ).rejects.toMatchObject({
         message: 'User not found',
         status: HttpStatus.NOT_FOUND,
       });
@@ -120,7 +170,7 @@ describe('AuthService', () => {
       userRepository.findOne.mockResolvedValue(createUser());
 
       await expect(
-        authService.changePassword({ oldPassword: password, newPassword: password }, 1),
+        authService.changePassword({ oldPassword: password, newPassword: password }, createUser()),
       ).rejects.toMatchObject({
         message: 'Old password and new password are the same.',
         status: HttpStatus.UNPROCESSABLE_ENTITY,
@@ -130,22 +180,32 @@ describe('AuthService', () => {
     it('rejects a wrong old password', async () => {
       userRepository.findOne.mockResolvedValue(createUser());
 
-      await expect(authService.changePassword({ oldPassword: 'wrong-password', newPassword }, 1)).rejects.toMatchObject(
-        {
-          message: 'Old password is incorrect.',
-          status: HttpStatus.UNPROCESSABLE_ENTITY,
-        },
-      );
+      await expect(
+        authService.changePassword({ oldPassword: 'wrong-password', newPassword }, createUser()),
+      ).rejects.toMatchObject({
+        message: 'Old password is incorrect.',
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+      });
     });
 
     it('hashes the new password and invalidates old tokens', async () => {
       userRepository.findOne.mockResolvedValue(createUser());
 
-      const user = await authService.changePassword({ oldPassword: password, newPassword }, 1);
+      const user = await authService.changePassword({ oldPassword: password, newPassword }, createUser());
 
       expect(await compare(newPassword, user.password)).toBe(true);
       expect(user.tokenVersion).toBe(1);
       expect(userRepository.save).toHaveBeenCalledWith(user);
+    });
+
+    it('saves the new admin password to the admin table', async () => {
+      adminRepository.findOne.mockResolvedValue(createAdmin());
+
+      const admin = await authService.changePassword({ oldPassword: password, newPassword }, createAdmin());
+
+      expect(admin.tokenVersion).toBe(1);
+      expect(adminRepository.save).toHaveBeenCalledWith(admin);
+      expect(userRepository.save).not.toHaveBeenCalled();
     });
   });
 
@@ -216,6 +276,14 @@ describe('AuthService', () => {
       expect(verify(access.token, ACCESS_TOKEN_SECRET) as JwtPayload).toMatchObject(payload);
       expect(verify(refresh.token, REFRESH_TOKEN_SECRET) as JwtPayload).toMatchObject(payload);
     });
+
+    it('signs admin tokens with the admin role and without username', () => {
+      const { access } = authService.buildAuthResponse(createAdmin());
+      const payload = verify(access.token, ACCESS_TOKEN_SECRET) as JwtPayload;
+
+      expect(payload).toMatchObject({ id: 5, email: 'admin@x.com', tokenVersion: 0, role: Role.ADMIN });
+      expect(payload).not.toHaveProperty('username');
+    });
   });
 
   describe('renewAccessToken', () => {
@@ -229,6 +297,18 @@ describe('AuthService', () => {
       expect(userRepository.findOne).toHaveBeenCalledWith({ where: { id: 1, tokenVersion: 2 } });
       expect(expiresIn).toBe(ACCESS_TOKEN_TTL);
       expect(verify(token, ACCESS_TOKEN_SECRET) as JwtPayload).toMatchObject({ id: 1 });
+    });
+
+    it('looks up the admin for an admin refresh token', async () => {
+      adminRepository.findOne.mockResolvedValue(createAdmin());
+
+      const { token } = await authService.renewAccessToken(
+        sign({ id: 5, tokenVersion: 0, role: Role.ADMIN }, REFRESH_TOKEN_SECRET),
+      );
+
+      expect(adminRepository.findOne).toHaveBeenCalledWith({ where: { id: 5, tokenVersion: 0 } });
+      expect(userRepository.findOne).not.toHaveBeenCalled();
+      expect(verify(token, ACCESS_TOKEN_SECRET) as JwtPayload).toMatchObject({ id: 5, role: Role.ADMIN });
     });
 
     it.each([

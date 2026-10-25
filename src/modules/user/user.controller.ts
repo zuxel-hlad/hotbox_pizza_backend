@@ -1,6 +1,10 @@
+import { Admin } from '@common/decorators/admin.decorator';
+import { Roles } from '@common/decorators/roles.decorator';
 import { User } from '@common/decorators/user.decorator';
 import { toApiSchema } from '@common/helpers/api-schema.helper';
+import { Role } from '@common/types/role.enum';
 import { AuthGuard } from '@core/guards/auth.guard';
+import { AdminEntity } from '@modules/admin/admin.entity';
 import { AuthService } from '@modules/auth/auth.service';
 import type { AuthResponse } from '@modules/auth/types/auth-response.interface';
 import { tokenResponseSchema } from '@modules/token/dto/token-response.dto';
@@ -26,15 +30,17 @@ export class UserController {
   @ApiOperation({ summary: 'Get logged user' })
   @ApiResponse({ status: HttpStatus.OK, standardSchema: userResponseSchema })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Not authorized' })
-  getLoggedUser(@User() user: UserEntity): UserResponseDto {
-    return this.userService.buildUserResponse(user);
+  getLoggedUser(@User() user: UserEntity, @Admin() admin: AdminEntity): UserResponseDto {
+    return this.userService.buildUserResponse(admin ?? user);
   }
 
   @Put('update')
+  @Roles([Role.CLIENT])
   @ApiBody({ schema: toApiSchema(z.object({ user: updateUserSchema })) })
   @ApiOperation({ summary: 'Update logged user' })
   @ApiResponse({ status: HttpStatus.OK, standardSchema: tokenResponseSchema })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Not authorized' })
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Forbidden' })
   @ApiResponse({
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     description: 'Validation errors',
